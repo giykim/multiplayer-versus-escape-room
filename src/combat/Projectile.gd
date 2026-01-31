@@ -158,7 +158,7 @@ func _deal_damage(target_id: int, target_body: Node2D) -> void:
 
 	if combat_system:
 		# Use CombatSystem for proper network sync
-		if multiplayer.has_multiplayer_peer():
+		if multiplayer and multiplayer.has_multiplayer_peer():
 			combat_system.request_damage(owner_id, target_id, damage)
 		else:
 			combat_system.deal_damage(owner_id, target_id, damage)

@@ -4,8 +4,12 @@
 .godot/
 *.translation
 
+# Godot 4.6+ UID cache files
+*.uid
+
 # Imported textures and other resources
 .import/
+*.import
 
 # Export templates and builds
 exports/

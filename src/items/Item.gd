@@ -107,7 +107,7 @@ func _on_body_entered(body: Node2D) -> void:
 	var player_id = body.get_player_id()
 
 	# Handle network sync for pickup
-	if sync_pickup and multiplayer.has_multiplayer_peer():
+	if sync_pickup and multiplayer and multiplayer.has_multiplayer_peer():
 		_request_pickup(player_id)
 	else:
 		# Single player - just pick up
@@ -203,7 +203,7 @@ func pickup_by(player_id: int) -> bool:
 	if _is_picked_up:
 		return false
 
-	if sync_pickup and multiplayer.has_multiplayer_peer():
+	if sync_pickup and multiplayer and multiplayer.has_multiplayer_peer():
 		_request_pickup(player_id)
 	else:
 		_do_pickup(player_id)

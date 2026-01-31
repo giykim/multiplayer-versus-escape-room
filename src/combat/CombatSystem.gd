@@ -117,7 +117,7 @@ func heal_player(player_id: int, amount: int) -> void:
 		print("[CombatSystem] Player %d healed for %d (now %d)" % [player_id, amount, player_health[player_id]])
 
 		# Sync heal in multiplayer
-		if multiplayer.has_multiplayer_peer():
+		if multiplayer and multiplayer.has_multiplayer_peer():
 			_sync_health.rpc(player_id, player_health[player_id])
 
 
@@ -154,7 +154,7 @@ func deal_damage(attacker_id: int, target_id: int, damage: int) -> bool:
 	health_changed.emit(target_id, new_health, MAX_HEALTH)
 
 	# Sync damage in multiplayer
-	if multiplayer.has_multiplayer_peer():
+	if multiplayer and multiplayer.has_multiplayer_peer():
 		_sync_damage.rpc(attacker_id, target_id, damage, new_health)
 
 	# Check for death
@@ -181,7 +181,7 @@ func _on_player_death(player_id: int, killer_id: int) -> void:
 	player_death_timers[player_id] = RESPAWN_DELAY
 
 	# Sync death in multiplayer
-	if multiplayer.has_multiplayer_peer():
+	if multiplayer and multiplayer.has_multiplayer_peer():
 		_sync_death.rpc(player_id, killer_id)
 
 
@@ -212,7 +212,7 @@ func _respawn_player(player_id: int) -> void:
 	player_respawned.emit(player_id, spawn_pos)
 
 	# Sync respawn in multiplayer
-	if multiplayer.has_multiplayer_peer():
+	if multiplayer and multiplayer.has_multiplayer_peer():
 		_sync_respawn.rpc(player_id, spawn_pos)
 
 
@@ -241,7 +241,7 @@ func request_damage(attacker_id: int, target_id: int, damage: int) -> void:
 	Client requests to deal damage. Server validates and applies.
 	In single player, this just applies the damage directly.
 	"""
-	if not multiplayer.has_multiplayer_peer():
+	if not multiplayer or not multiplayer.has_multiplayer_peer():
 		# Single player - apply directly
 		deal_damage(attacker_id, target_id, damage)
 		return

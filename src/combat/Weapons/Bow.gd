@@ -233,7 +233,7 @@ func _spawn_projectile(direction: Vector2, projectile_damage: int, speed: float)
 	projectiles_parent.add_child(projectile)
 
 	# Sync projectile spawn in multiplayer
-	if multiplayer.has_multiplayer_peer():
+	if multiplayer and multiplayer.has_multiplayer_peer():
 		_sync_projectile_spawn.rpc(spawn_pos, direction, projectile_damage, speed)
 
 
@@ -303,7 +303,7 @@ func _sync_charge_state(is_charging: bool, charge_time: float, direction: Vector
 func start_charge(direction: Vector2 = Vector2.RIGHT) -> bool:
 	var result = super.start_charge(direction)
 
-	if result and multiplayer.has_multiplayer_peer():
+	if result and multiplayer and multiplayer.has_multiplayer_peer():
 		_sync_charge_state.rpc(true, 0.0, direction)
 
 	return result
@@ -312,5 +312,5 @@ func start_charge(direction: Vector2 = Vector2.RIGHT) -> bool:
 func cancel_charge() -> void:
 	super.cancel_charge()
 
-	if multiplayer.has_multiplayer_peer():
+	if multiplayer and multiplayer.has_multiplayer_peer():
 		_sync_charge_state.rpc(false, 0.0, Vector2.ZERO)

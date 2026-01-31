@@ -159,7 +159,7 @@ func _deal_damage_to_player(target_id: int, target_body: Node2D) -> void:
 
 	if combat_system:
 		# Use CombatSystem for proper network sync
-		if multiplayer.has_multiplayer_peer():
+		if multiplayer and multiplayer.has_multiplayer_peer():
 			combat_system.request_damage(owner_id, target_id, damage)
 		else:
 			combat_system.deal_damage(owner_id, target_id, damage)
@@ -234,7 +234,7 @@ func attack(direction: Vector2 = Vector2.RIGHT) -> bool:
 	var result = super.attack(direction)
 
 	# Sync attack to other players
-	if result and multiplayer.has_multiplayer_peer():
+	if result and multiplayer and multiplayer.has_multiplayer_peer():
 		sync_swing.rpc(direction)
 
 	return result

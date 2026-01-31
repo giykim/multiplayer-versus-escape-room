@@ -73,7 +73,7 @@ func _ready() -> void:
 
 func _setup_multiplayer_authority() -> void:
 	# Check if we're in a multiplayer context
-	if multiplayer.has_multiplayer_peer():
+	if multiplayer and multiplayer.has_multiplayer_peer():
 		# Set multiplayer authority based on player_id
 		set_multiplayer_authority(player_id)
 		_is_local_player = is_multiplayer_authority()
@@ -115,7 +115,7 @@ func _apply_player_color() -> void:
 
 func _physics_process(delta: float) -> void:
 	# Only process movement for local player or if we're not in multiplayer
-	if not _is_local_player and multiplayer.has_multiplayer_peer():
+	if not _is_local_player and multiplayer and multiplayer.has_multiplayer_peer():
 		return
 
 	_process_movement(delta)
