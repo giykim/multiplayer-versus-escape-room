@@ -268,4 +268,5 @@ func _add_player_list_item(peer_id: int, player_name: String, is_ready: bool, is
 
 
 func _load_game_scene() -> void:
-	get_tree().change_scene_to_file("res://src/Game.tscn")
+	# Use 3D game scene
+	get_tree().change_scene_to_file("res://src/Game3D.tscn")

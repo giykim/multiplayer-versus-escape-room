@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://game3d_main"]
+
+[ext_resource type="Script" path="res://src/Game3D.gd" id="1_game3d"]
+[ext_resource type="Script" path="res://src/dungeon3d/Dungeon3D.gd" id="2_dungeon3d"]
+
+[node name="Game3D" type="Node3D"]
+script = ExtResource("1_game3d")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.433, 0.25, 0, 0.5, 0.866, -0.5, -0.75, 0.433, 0, 10, 0)
+light_color = Color(1, 0.95, 0.9, 1)
+light_energy = 0.5
+shadow_enabled = true
+
+[node name="Dungeon3D" type="Node3D" parent="."]
+script = ExtResource("2_dungeon3d")
+
+[node name="PlayerContainer" type="Node3D" parent="."]
