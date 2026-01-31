@@ -15,7 +15,7 @@ const ROOM_SCENES: Dictionary = {
 	DungeonGenerator.RoomType.TREASURE: "res://src/dungeon/RoomTypes/TreasureRoom.tscn",
 	DungeonGenerator.RoomType.SHOP: "res://src/dungeon/Room.tscn",  # Use base for now
 	DungeonGenerator.RoomType.TRANSIT: "res://src/dungeon/Room.tscn",
-	DungeonGenerator.RoomType.ARENA: "res://src/dungeon/Room.tscn"  # Use base for now
+	DungeonGenerator.RoomType.ARENA: "res://src/dungeon/RoomTypes/ArenaRoom.tscn"
 }
 
 # Base room scene fallback

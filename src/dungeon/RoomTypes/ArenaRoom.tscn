@@ -1,0 +1,51 @@
+[gd_scene load_steps=2 format=3 uid="uid://arena_room_scene"]
+
+[ext_resource type="Script" path="res://src/dungeon/RoomTypes/ArenaRoom.gd" id="1_arena"]
+
+[node name="ArenaRoom" type="Node2D"]
+script = ExtResource("1_arena")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0.15, 0.08, 0.08, 1)
+
+[node name="ArenaBorder" type="ColorRect" parent="."]
+offset_left = 100.0
+offset_top = 100.0
+offset_right = 1820.0
+offset_bottom = 980.0
+color = Color(0.2, 0.1, 0.1, 1)
+
+[node name="ArenaFloor" type="ColorRect" parent="."]
+offset_left = 150.0
+offset_top = 150.0
+offset_right = 1770.0
+offset_bottom = 930.0
+color = Color(0.25, 0.15, 0.15, 1)
+
+[node name="CenterMarker" type="ColorRect" parent="."]
+offset_left = 940.0
+offset_top = 520.0
+offset_right = 980.0
+offset_bottom = 560.0
+color = Color(0.5, 0.2, 0.2, 1)
+
+[node name="PlayerSpawn" type="Marker2D" parent="."]
+position = Vector2(960, 540)
+
+[node name="LeftDoor" type="Area2D" parent="." groups=["door"]]
+position = Vector2(50, 540)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LeftDoor"]
+shape = SubResource("RectangleShape2D_door")
+
+[node name="DoorVisual" type="ColorRect" parent="LeftDoor"]
+offset_left = -25.0
+offset_top = -50.0
+offset_right = 25.0
+offset_bottom = 50.0
+color = Color(0.3, 0.3, 0.3, 1)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_door"]
+size = Vector2(50, 100)

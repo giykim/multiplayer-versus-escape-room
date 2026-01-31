@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3 uid="uid://c4projectile_arrow"]
+
+[ext_resource type="Script" path="res://src/combat/Projectile.gd" id="1_projectile"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_arrow"]
+radius = 5.0
+
+[node name="Projectile" type="Area2D"]
+collision_layer = 8
+collision_mask = 3
+script = ExtResource("1_projectile")
+speed = 400.0
+damage = 10
+max_range = 500.0
+max_lifetime = 5.0
+knockback_force = 50.0
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+rotation = 1.5708
+scale = Vector2(0.3, 0.6)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_arrow")
+
+[node name="Trail" type="GPUParticles2D" parent="."]
+emitting = false
+amount = 20
+process_material = null
+lifetime = 0.3
