@@ -165,8 +165,8 @@ func start_game(seed_value: int) -> void:
 func request_start_game() -> void:
 	if is_host:
 		var seed_value = randi()
+		# RPC will execute on all peers including host, so don't call locally
 		start_game.rpc(seed_value)
-		GameManager.start_match(seed_value)
 
 
 @rpc("any_peer", "reliable")
@@ -175,16 +175,20 @@ func notify_puzzle_completed(puzzle_id: String, time_taken: float) -> void:
 	if sender_id == 0:
 		sender_id = local_player_id
 
-	GameManager.on_puzzle_solved(sender_id, puzzle_id, time_taken)
-
-	# Broadcast to all players
+	# Host processes locally, then broadcasts to clients only
 	if is_host:
-		_broadcast_puzzle_completion.rpc(sender_id, puzzle_id, time_taken)
+		GameManager.on_puzzle_solved(sender_id, puzzle_id, time_taken)
+		# Broadcast to clients (excluding host)
+		for peer_id in connected_players:
+			if peer_id != 1:  # Don't send to host (ourselves)
+				_broadcast_puzzle_completion.rpc_id(peer_id, sender_id, puzzle_id, time_taken)
 
 
 @rpc("authority", "reliable")
 func _broadcast_puzzle_completion(player_id: int, puzzle_id: String, time_taken: float) -> void:
-	GameManager.on_puzzle_solved(player_id, puzzle_id, time_taken)
+	# Only clients should receive this
+	if not is_host:
+		GameManager.on_puzzle_solved(player_id, puzzle_id, time_taken)
 
 
 func is_multiplayer_active() -> bool:

@@ -79,6 +79,11 @@ func play_music(track: MusicTrack, fade_duration: float = 1.0) -> void:
 	if track_path.is_empty():
 		return
 
+	# Check if file exists before loading
+	if not ResourceLoader.exists(track_path):
+		push_warning("[AudioManager] Music file not found: %s" % track_path)
+		return
+
 	var stream = load(track_path)
 	if stream:
 		if music_player.playing:

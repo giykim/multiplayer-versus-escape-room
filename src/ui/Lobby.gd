@@ -24,8 +24,8 @@ var local_ready: bool = false
 # Player ready states (peer_id -> is_ready)
 var player_ready_states: Dictionary = {}
 
-# Template for player list items
-const PLAYER_LIST_ITEM = preload("res://src/ui/PlayerListItem.tscn") if ResourceLoader.exists("res://src/ui/PlayerListItem.tscn") else null
+# Template for player list items (loaded dynamically if exists)
+var player_list_item_scene: PackedScene = null
 
 
 func _ready() -> void:
@@ -62,7 +62,9 @@ func _setup_for_mode() -> void:
 	if is_hosting:
 		# Host mode - hide IP input, show different button text
 		ip_input.visible = false
-		ip_input.get_parent().get_node_or_null("IPLabel").visible = false if ip_input.get_parent().get_node_or_null("IPLabel") else true
+		var ip_label = ip_input.get_parent().get_node_or_null("IPLabel")
+		if ip_label:
+			ip_label.visible = false
 		connect_button.text = "Create Lobby"
 		status_label.text = "Configure your lobby"
 		start_button.visible = false  # Hidden until connected

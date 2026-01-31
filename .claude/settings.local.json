@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:docs.godotengine.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:awsomedevs.medium.com)",
+      "WebFetch(domain:thecodex.ca)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial project setup with core systems and MVP features\n\nPhase 1 implementation includes:\n- Godot 4 project configuration with input mappings and autoloads\n- Core singletons: GameManager, NetworkManager, AudioManager\n- Player movement system with multiplayer authority support\n- Base puzzle system with sliding tile puzzle implementation\n- UI: Main menu, multiplayer lobby, and in-game HUD\n- Comprehensive Game Design Document\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd dungeon generation, room navigation, and pattern puzzle\n\nPhase 2 implementation:\n- Procedural dungeon generator with seed-based layouts\n- Room system with puzzle/treasure/shop/transit/arena types\n- Room navigation with door transitions and progress tracking\n- Pattern sequence puzzle \\(Simon-says style\\)\n- Main Game scene connecting player, dungeon, and HUD\n- Updated Lobby to load actual game scene\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)"
+    ]
+  }
+}
