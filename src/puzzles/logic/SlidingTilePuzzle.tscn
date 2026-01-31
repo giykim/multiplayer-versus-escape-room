@@ -1,0 +1,38 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8wk7dqx5v2ml"]
+
+[ext_resource type="Script" path="res://src/puzzles/logic/SlidingTilePuzzle.gd" id="1_puzzle"]
+
+[node name="SlidingTilePuzzle" type="Node2D"]
+script = ExtResource("1_puzzle")
+puzzle_id = ""
+difficulty = 1
+time_limit = 0.0
+grid_size = 3
+tile_size = Vector2(100, 100)
+tile_spacing = 4.0
+
+[node name="Background" type="ColorRect" parent="."]
+offset_left = -180.0
+offset_top = -180.0
+offset_right = 180.0
+offset_bottom = 180.0
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="Title" type="Label" parent="."]
+offset_left = -150.0
+offset_top = -220.0
+offset_right = 150.0
+offset_bottom = -180.0
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "Sliding Puzzle"
+
+[node name="Instructions" type="Label" parent="."]
+offset_left = -150.0
+offset_top = 180.0
+offset_right = 150.0
+offset_bottom = 220.0
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "Click tiles adjacent to the empty space to slide them"
+autowrap_mode = 2

@@ -1,0 +1,142 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8j2n5k7l4m1"]
+
+[ext_resource type="Script" path="res://src/ui/Lobby.gd" id="1_lobby"]
+
+[node name="Lobby" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lobby")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.102, 0.102, 0.18, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -200.0
+offset_right = 250.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Lobby"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.494, 0.851, 0.341, 1)
+text = "Waiting for players..."
+horizontal_alignment = 1
+
+[node name="ConnectionPanel" type="PanelContainer" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="VBoxContainer/ConnectionPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="NameRow" type="HBoxContainer" parent="VBoxContainer/ConnectionPanel/VBox"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="VBoxContainer/ConnectionPanel/VBox/NameRow"]
+layout_mode = 2
+text = "Name:"
+
+[node name="PlayerNameInput" type="LineEdit" parent="VBoxContainer/ConnectionPanel/VBox/NameRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Enter your name"
+max_length = 20
+
+[node name="IPRow" type="HBoxContainer" parent="VBoxContainer/ConnectionPanel/VBox"]
+layout_mode = 2
+
+[node name="IPLabel" type="Label" parent="VBoxContainer/ConnectionPanel/VBox/IPRow"]
+layout_mode = 2
+text = "IP:"
+
+[node name="IPInput" type="LineEdit" parent="VBoxContainer/ConnectionPanel/VBox/IPRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "127.0.0.1"
+placeholder_text = "127.0.0.1"
+
+[node name="PortRow" type="HBoxContainer" parent="VBoxContainer/ConnectionPanel/VBox"]
+layout_mode = 2
+
+[node name="PortLabel" type="Label" parent="VBoxContainer/ConnectionPanel/VBox/PortRow"]
+layout_mode = 2
+text = "Port:"
+
+[node name="PortInput" type="LineEdit" parent="VBoxContainer/ConnectionPanel/VBox/PortRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "7777"
+placeholder_text = "7777"
+
+[node name="ConnectButton" type="Button" parent="VBoxContainer/ConnectionPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Connect"
+
+[node name="PlayerListPanel" type="PanelContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBox" type="VBoxContainer" parent="VBoxContainer/PlayerListPanel"]
+layout_mode = 2
+
+[node name="PlayersLabel" type="Label" parent="VBoxContainer/PlayerListPanel/VBox"]
+layout_mode = 2
+text = "Players:"
+
+[node name="PlayerListContainer" type="VBoxContainer" parent="VBoxContainer/PlayerListPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ButtonsRow" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="BackButton" type="Button" parent="VBoxContainer/ButtonsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Back"
+
+[node name="ReadyButton" type="Button" parent="VBoxContainer/ButtonsRow"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Ready"
+
+[node name="StartButton" type="Button" parent="VBoxContainer/ButtonsRow"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Start Game"

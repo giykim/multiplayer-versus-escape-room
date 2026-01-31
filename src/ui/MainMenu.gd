@@ -1,0 +1,57 @@
+extends Control
+## MainMenu - Main menu screen for the game
+## Handles navigation to lobby, settings, and game exit
+
+@onready var host_button: Button = %HostButton
+@onready var join_button: Button = %JoinButton
+@onready var settings_button: Button = %SettingsButton
+@onready var quit_button: Button = %QuitButton
+
+
+func _ready() -> void:
+	# Connect button signals
+	host_button.pressed.connect(_on_host_pressed)
+	join_button.pressed.connect(_on_join_pressed)
+	settings_button.pressed.connect(_on_settings_pressed)
+	quit_button.pressed.connect(_on_quit_pressed)
+
+	# Set initial game state
+	GameManager.change_state(GameManager.GameState.MENU)
+
+	# Play menu music
+	AudioManager.play_music(AudioManager.MusicTrack.MENU)
+
+	print("[MainMenu] Ready")
+
+
+func _on_host_pressed() -> void:
+	AudioManager.play_ui_click()
+	_go_to_lobby(true)
+
+
+func _on_join_pressed() -> void:
+	AudioManager.play_ui_click()
+	_go_to_lobby(false)
+
+
+func _on_settings_pressed() -> void:
+	AudioManager.play_ui_click()
+	# TODO: Open settings menu
+	print("[MainMenu] Settings not yet implemented")
+
+
+func _on_quit_pressed() -> void:
+	AudioManager.play_ui_click()
+	# Small delay to let the click sound play
+	await get_tree().create_timer(0.1).timeout
+	get_tree().quit()
+
+
+func _go_to_lobby(as_host: bool) -> void:
+	# Store hosting preference for lobby to use
+	var lobby_scene = load("res://src/ui/Lobby.tscn")
+	var lobby_instance = lobby_scene.instantiate()
+	lobby_instance.is_hosting = as_host
+
+	get_tree().root.add_child(lobby_instance)
+	queue_free()
