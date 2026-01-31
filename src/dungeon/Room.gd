@@ -221,6 +221,15 @@ func _setup_arena() -> void:
 	pass
 
 
+## Activate the room (start puzzle, enable interactions)
+func activate() -> void:
+	print("[Room %d] Activated" % room_index)
+
+	# Start puzzle if exists
+	if current_puzzle and not current_puzzle.is_active:
+		current_puzzle.start_puzzle()
+
+
 ## Update door visual states
 func _update_door_visuals() -> void:
 	# Update left door
