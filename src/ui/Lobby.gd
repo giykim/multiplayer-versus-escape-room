@@ -266,7 +266,4 @@ func _add_player_list_item(peer_id: int, player_name: String, is_ready: bool, is
 
 
 func _load_game_scene() -> void:
-	# TODO: Replace with actual game scene path
-	# For now, just print a message
-	print("[Lobby] Would load game scene here")
-	# get_tree().change_scene_to_file("res://src/dungeon/Dungeon.tscn")
+	get_tree().change_scene_to_file("res://src/Game.tscn")
