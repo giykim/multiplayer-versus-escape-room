@@ -95,6 +95,10 @@ After each phase:
 
 ### Git History
 ```
+04e6a10 - Add 3D Game scene and interference/sabotage system
+f67b4ca - Add 3D first-person player and room system
+75a28ed - Add 3D physics layers and input actions for first-person
+81eb567 - Add opponent tracker UI and update resume documentation
 dfa184b - Fix missing activate() function in base Room class
 94cf555 - Add combat system, weapons, items, and arena room
 455fba7 - Fix critical bugs found in code review
