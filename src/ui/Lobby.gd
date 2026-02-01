@@ -71,35 +71,54 @@ func _ready() -> void:
 func _setup_for_mode() -> void:
 	if is_hosting:
 		# Host mode - hide IP input, show different button text
-		ip_input.visible = false
-		var ip_label = ip_input.get_parent().get_node_or_null("IPLabel")
-		if ip_label:
-			ip_label.visible = false
-		connect_button.text = "Create Lobby"
-		status_label.text = "Configure your lobby"
-		start_button.visible = false  # Hidden until connected
-		ready_button.visible = false  # Host doesn't need ready button
+		if ip_input:
+			ip_input.visible = false
+			var ip_label = ip_input.get_parent().get_node_or_null("IPLabel")
+			if ip_label:
+				ip_label.visible = false
+		if connect_button:
+			connect_button.text = "Create Lobby"
+		if status_label:
+			status_label.text = "Configure your lobby"
+		if start_button:
+			start_button.visible = false  # Hidden until connected
+		if ready_button:
+			ready_button.visible = false  # Host doesn't need ready button
 	else:
 		# Join mode
-		connect_button.text = "Join Lobby"
-		status_label.text = "Enter host details"
-		start_button.visible = false  # Only host can start
-		ready_button.visible = false  # Hidden until connected
+		if connect_button:
+			connect_button.text = "Join Lobby"
+		if status_label:
+			status_label.text = "Enter host details"
+		if start_button:
+			start_button.visible = false  # Only host can start
+		if ready_button:
+			ready_button.visible = false  # Hidden until connected
 
 
 func _on_connect_pressed() -> void:
-	AudioManager.play_ui_click()
+	if AudioManager:
+		AudioManager.play_ui_click()
 
-	var player_name = player_name_input.text.strip_edges()
+	var player_name = player_name_input.text.strip_edges() if player_name_input else "Player"
 	if player_name.is_empty():
 		player_name = "Player"
 
-	var port = int(port_input.text)
+	var port = int(port_input.text) if port_input else 7777
 	if port <= 0 or port > 65535:
-		port = NetworkManager.DEFAULT_PORT
+		port = NetworkManager.DEFAULT_PORT if NetworkManager else 7777
 
-	connect_button.disabled = true
-	status_label.text = "Connecting..."
+	if connect_button:
+		connect_button.disabled = true
+	if status_label:
+		status_label.text = "Connecting..."
+
+	if not NetworkManager:
+		if status_label:
+			status_label.text = "NetworkManager not available"
+		if connect_button:
+			connect_button.disabled = false
+		return
 
 	var error: Error
 	if is_hosting:
@@ -107,38 +126,49 @@ func _on_connect_pressed() -> void:
 		if error == OK:
 			_on_host_created()
 	else:
-		var ip = ip_input.text.strip_edges()
+		var ip = ip_input.text.strip_edges() if ip_input else "127.0.0.1"
 		if ip.is_empty():
 			ip = "127.0.0.1"
 		error = NetworkManager.join_game(ip, port, player_name)
 
 	if error != OK:
-		status_label.text = "Connection failed: %s" % error_string(error)
-		connect_button.disabled = false
+		if status_label:
+			status_label.text = "Connection failed: %s" % error_string(error)
+		if connect_button:
+			connect_button.disabled = false
 
 
 func _on_host_created() -> void:
-	status_label.text = "Lobby created! Waiting for players..."
-	connection_panel.visible = false
-	start_button.visible = true
-	start_button.disabled = true  # Disabled until at least 2 players
+	if status_label:
+		status_label.text = "Lobby created! Waiting for players..."
+	if connection_panel:
+		connection_panel.visible = false
+	if start_button:
+		start_button.visible = true
+		start_button.disabled = true  # Disabled until at least 2 players
 	_update_player_list()
 
 
 func _on_connection_succeeded() -> void:
-	status_label.text = "Connected!"
-	connection_panel.visible = false
-	ready_button.visible = true
+	if status_label:
+		status_label.text = "Connected!"
+	if connection_panel:
+		connection_panel.visible = false
+	if ready_button:
+		ready_button.visible = true
 	_update_player_list()
 
 
 func _on_connection_failed() -> void:
-	status_label.text = "Connection failed. Check IP and port."
-	connect_button.disabled = false
+	if status_label:
+		status_label.text = "Connection failed. Check IP and port."
+	if connect_button:
+		connect_button.disabled = false
 
 
 func _on_server_disconnected() -> void:
-	status_label.text = "Disconnected from server."
+	if status_label:
+		status_label.text = "Disconnected from server."
 	_return_to_menu()
 
 
@@ -146,7 +176,7 @@ func _on_lobby_updated(player_names: Array) -> void:
 	_update_player_list()
 
 	# Update start button state for host
-	if is_hosting:
+	if is_hosting and start_button and NetworkManager:
 		var player_count = NetworkManager.get_player_count()
 		start_button.disabled = player_count < 2 or not _all_players_ready()
 
@@ -162,30 +192,35 @@ func _on_player_disconnected(peer_id: int) -> void:
 
 
 func _on_start_pressed() -> void:
-	AudioManager.play_ui_click()
+	if AudioManager:
+		AudioManager.play_ui_click()
 
 	if not is_hosting:
 		return
 
-	status_label.text = "Starting game..."
-	start_button.disabled = true
+	if status_label:
+		status_label.text = "Starting game..."
+	if start_button:
+		start_button.disabled = true
 
 	# Request game start through NetworkManager
-	NetworkManager.request_start_game()
+	if NetworkManager:
+		NetworkManager.request_start_game()
 
 	# Transition to game scene
-	# TODO: Replace with actual game scene
 	await get_tree().create_timer(0.5).timeout
 	_load_game_scene()
 
 
 func _on_ready_pressed() -> void:
-	AudioManager.play_ui_click()
+	if AudioManager:
+		AudioManager.play_ui_click()
 
 	local_ready = not local_ready
-	ready_button.text = "Not Ready" if local_ready else "Ready"
+	if ready_button:
+		ready_button.text = "Not Ready" if local_ready else "Ready"
 
-	var local_id = NetworkManager.get_local_player_id()
+	var local_id = NetworkManager.get_local_player_id() if NetworkManager else 1
 	player_ready_states[local_id] = local_ready
 
 	# Notify other players
@@ -200,12 +235,15 @@ func _sync_ready_state(player_id: int, is_ready: bool) -> void:
 	_update_player_list()
 
 	# Update start button for host
-	if is_hosting:
+	if is_hosting and start_button and NetworkManager:
 		start_button.disabled = NetworkManager.get_player_count() < 2 or not _all_players_ready()
 
 
 func _all_players_ready() -> bool:
 	if player_ready_states.is_empty():
+		return false
+
+	if not NetworkManager:
 		return false
 
 	for peer_id in NetworkManager.connected_players:
@@ -218,8 +256,10 @@ func _all_players_ready() -> bool:
 
 
 func _on_back_pressed() -> void:
-	AudioManager.play_ui_click()
-	NetworkManager.disconnect_from_game()
+	if AudioManager:
+		AudioManager.play_ui_click()
+	if NetworkManager:
+		NetworkManager.disconnect_from_game()
 	_return_to_menu()
 
 

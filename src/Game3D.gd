@@ -24,8 +24,9 @@ var is_match_active: bool = false
 
 func _ready() -> void:
 	# Connect to GameManager signals
-	GameManager.game_state_changed.connect(_on_game_state_changed)
-	GameManager.puzzle_completed.connect(_on_puzzle_completed)
+	if GameManager:
+		GameManager.game_state_changed.connect(_on_game_state_changed)
+		GameManager.puzzle_completed.connect(_on_puzzle_completed)
 
 	# Connect to dungeon signals
 	if dungeon:
@@ -61,10 +62,13 @@ func _setup_match() -> void:
 		add_child(opponent_tracker)
 
 	# Generate dungeon with match seed
-	var seed_value = GameManager.get_match_seed()
+	var seed_value = 0
+	if GameManager:
+		seed_value = GameManager.get_match_seed()
 	if seed_value == 0:
 		seed_value = randi()
-		GameManager.match_seed = seed_value
+		if GameManager:
+			GameManager.match_seed = seed_value
 
 	if dungeon and dungeon.has_method("generate_dungeon"):
 		dungeon.generate_dungeon(seed_value)
@@ -77,7 +81,7 @@ func _setup_match() -> void:
 
 
 func _spawn_players() -> void:
-	if NetworkManager.is_multiplayer_active():
+	if NetworkManager and NetworkManager.is_multiplayer_active():
 		for player_id in NetworkManager.connected_players:
 			_spawn_player(player_id)
 	else:
@@ -89,7 +93,7 @@ func _spawn_player(player_id: int) -> void:
 	player.name = "Player3D_%d" % player_id
 
 	# Set multiplayer authority
-	if NetworkManager.is_multiplayer_active():
+	if NetworkManager and NetworkManager.is_multiplayer_active():
 		player.set_multiplayer_authority(player_id)
 
 	# Set player ID
@@ -104,7 +108,9 @@ func _spawn_player(player_id: int) -> void:
 	player.global_position = spawn_pos
 
 	# Track local player
-	var is_local = (player_id == NetworkManager.get_local_player_id()) or (player_id == 1 and not NetworkManager.is_multiplayer_active())
+	var local_id = NetworkManager.get_local_player_id() if NetworkManager else 1
+	var mp_active = NetworkManager.is_multiplayer_active() if NetworkManager else false
+	var is_local = (player_id == local_id) or (player_id == 1 and not mp_active)
 
 	if is_local:
 		local_player = player
@@ -128,7 +134,10 @@ func _spawn_player(player_id: int) -> void:
 	if player.has_signal("interaction_triggered"):
 		player.interaction_triggered.connect(_on_player_interaction)
 
-	player_container.add_child(player)
+	if player_container:
+		player_container.add_child(player)
+	else:
+		add_child(player)  # Fallback to scene root
 	players[player_id] = player
 
 	print("[Game3D] Spawned player %d (local: %s)" % [player_id, is_local])
@@ -136,7 +145,8 @@ func _spawn_player(player_id: int) -> void:
 
 func _start_match() -> void:
 	is_match_active = true
-	GameManager.change_state(GameManager.GameState.PUZZLE_PHASE)
+	if GameManager:
+		GameManager.change_state(GameManager.GameState.PUZZLE_PHASE)
 
 	# Activate first room
 	if dungeon and dungeon.has_method("get_current_room"):
@@ -151,17 +161,20 @@ func _start_match() -> void:
 func _on_game_state_changed(new_state: GameManager.GameState) -> void:
 	match new_state:
 		GameManager.GameState.PUZZLE_PHASE:
-			AudioManager.play_music(AudioManager.MusicTrack.PUZZLE)
+			if AudioManager:
+				AudioManager.play_music(AudioManager.MusicTrack.PUZZLE)
 		GameManager.GameState.ARENA_PHASE:
-			AudioManager.play_music(AudioManager.MusicTrack.ARENA)
+			if AudioManager:
+				AudioManager.play_music(AudioManager.MusicTrack.ARENA)
 		GameManager.GameState.GAME_OVER:
 			is_match_active = false
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
 func _on_puzzle_completed(player_id: int, puzzle_id: String, time_taken: float) -> void:
+	var local_id = NetworkManager.get_local_player_id() if NetworkManager else 1
 	if hud and hud.has_method("show_message"):
-		if player_id == NetworkManager.get_local_player_id():
+		if player_id == local_id:
 			hud.show_message("Puzzle solved!")
 
 	# Broadcast progress to opponents

@@ -222,11 +222,14 @@ func sync_player_progress(player_id: int, room_index: int, status: String, coins
 
 # Broadcast local player's progress to opponents
 func broadcast_progress(room_index: int, status: String) -> void:
-	if not NetworkManager.is_multiplayer_active():
+	if not NetworkManager or not NetworkManager.is_multiplayer_active():
 		return
 
-	var coins = GameManager.player_coins.get(local_player_id, 0)
-	var player_data = GameManager.get_player_data(local_player_id)
-	var puzzles = player_data.puzzles_solved if player_data else 0
+	var coins = 0
+	var puzzles = 0
+	if GameManager:
+		coins = GameManager.player_coins.get(local_player_id, 0)
+		var player_data = GameManager.get_player_data(local_player_id)
+		puzzles = player_data.puzzles_solved if player_data else 0
 
 	sync_player_progress.rpc(local_player_id, room_index, status, coins, puzzles)

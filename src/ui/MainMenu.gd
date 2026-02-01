@@ -9,39 +9,49 @@ extends Control
 
 
 func _ready() -> void:
-	# Connect button signals
-	host_button.pressed.connect(_on_host_pressed)
-	join_button.pressed.connect(_on_join_pressed)
-	settings_button.pressed.connect(_on_settings_pressed)
-	quit_button.pressed.connect(_on_quit_pressed)
+	# Connect button signals (with null checks)
+	if host_button:
+		host_button.pressed.connect(_on_host_pressed)
+	if join_button:
+		join_button.pressed.connect(_on_join_pressed)
+	if settings_button:
+		settings_button.pressed.connect(_on_settings_pressed)
+	if quit_button:
+		quit_button.pressed.connect(_on_quit_pressed)
 
 	# Set initial game state
-	GameManager.change_state(GameManager.GameState.MENU)
+	if GameManager:
+		GameManager.change_state(GameManager.GameState.MENU)
 
 	# Play menu music
-	AudioManager.play_music(AudioManager.MusicTrack.MENU)
+	if AudioManager:
+		AudioManager.play_music(AudioManager.MusicTrack.MENU)
 
 	print("[MainMenu] Ready")
 
 
 func _on_host_pressed() -> void:
-	AudioManager.play_ui_click()
+	if AudioManager:
+		AudioManager.play_ui_click()
 	_go_to_lobby(true)
 
 
 func _on_join_pressed() -> void:
-	AudioManager.play_ui_click()
+	if AudioManager:
+		AudioManager.play_ui_click()
 	_go_to_lobby(false)
 
 
 func _on_settings_pressed() -> void:
-	AudioManager.play_ui_click()
+	if AudioManager:
+		AudioManager.play_ui_click()
 	# TODO: Open settings menu
 	print("[MainMenu] Settings not yet implemented")
 
 
 func _on_quit_pressed() -> void:
-	AudioManager.play_ui_click()
+	if AudioManager:
+		AudioManager.play_ui_click()
 	# Small delay to let the click sound play
 	await get_tree().create_timer(0.1).timeout
 	get_tree().quit()
