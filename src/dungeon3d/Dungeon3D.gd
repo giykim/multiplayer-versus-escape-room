@@ -14,7 +14,7 @@ signal player_progress_updated(player_id: int, room_index: int)
 const ROOM_SCENES_3D: Dictionary = {
 	DungeonGenerator.RoomType.PUZZLE: "res://src/dungeon3d/PuzzleRoom3D.tscn",
 	DungeonGenerator.RoomType.TREASURE: "res://src/dungeon3d/TreasureRoom3D.tscn",
-	DungeonGenerator.RoomType.SHOP: "res://src/dungeon3d/Room3D.tscn",  # Use base for now
+	DungeonGenerator.RoomType.SHOP: "res://src/dungeon3d/ShopRoom3D.tscn",
 	DungeonGenerator.RoomType.TRANSIT: "res://src/dungeon3d/Room3D.tscn",
 	DungeonGenerator.RoomType.ARENA: "res://src/dungeon3d/ArenaRoom3D.tscn"
 }
@@ -45,11 +45,21 @@ var player_completion_times: Dictionary = {}  # player_id -> completion_time
 # Container for room nodes
 var room_container: Node3D = null
 
+# Transition cooldown to prevent double-transitions
+var transition_cooldown: bool = false
+const TRANSITION_COOLDOWN_TIME: float = 0.5
+
 
 func _ready() -> void:
 	room_container = Node3D.new()
 	room_container.name = "RoomContainer"
 	add_child(room_container)
+
+
+## Start transition cooldown timer
+func _start_transition_cooldown() -> void:
+	await get_tree().create_timer(TRANSITION_COOLDOWN_TIME).timeout
+	transition_cooldown = false
 
 
 ## Generate and initialize a new dungeon
@@ -119,12 +129,21 @@ func get_room(index: int) -> Room3D:
 
 ## Transition a player to a different room
 func transition_to_room(room_index: int, player_id: int = 1) -> bool:
+	# Prevent double-transitions
+	if transition_cooldown:
+		print("[Dungeon3D] Transition on cooldown, ignoring")
+		return false
+
 	if not layout:
 		push_error("[Dungeon3D] No layout generated")
 		return false
 
 	if room_index < 0 or room_index >= layout.room_count:
 		push_error("[Dungeon3D] Invalid room index: %d" % room_index)
+		return false
+
+	# Don't transition to the same room
+	if room_index == current_room_index:
 		return false
 
 	var old_room_index = current_room_index
@@ -139,6 +158,10 @@ func transition_to_room(room_index: int, player_id: int = 1) -> bool:
 
 		# Notify current room of player exit
 		current_room.on_player_exit(player_id)
+
+	# Start cooldown
+	transition_cooldown = true
+	_start_transition_cooldown()
 
 	# Load new room if needed
 	if not loaded_rooms.has(room_index):
@@ -234,10 +257,13 @@ func _load_room(room_index: int) -> Room3D:
 		push_error("[Dungeon3D] Room scene did not instantiate as Room3D")
 		return null
 
+	# Set dungeon reference and total rooms BEFORE initialize
+	room.dungeon = self
+	room.total_rooms = layout.room_count
+
 	# Initialize room with data
 	room.initialize_from_data(room_data)
 	room.name = "Room3D_%d" % room_index
-	room.dungeon = self  # Set reference to dungeon for door transitions
 
 	# Position room in world space (linear arrangement along X axis)
 	room.position = Vector3(room_index * ROOM_SPACING, 0, 0)

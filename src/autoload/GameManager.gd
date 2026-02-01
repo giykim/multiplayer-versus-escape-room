@@ -6,6 +6,7 @@ signal game_state_changed(new_state: GameState)
 signal player_registered(player_id: int)
 signal puzzle_completed(player_id: int, puzzle_id: String, time_taken: float)
 signal match_ended(winner_id: int)
+signal coins_changed(player_id: int, new_total: int)
 
 enum GameState {
 	MENU,
@@ -198,3 +199,29 @@ func get_match_seed() -> int:
 
 func is_in_game() -> bool:
 	return current_state in [GameState.PUZZLE_PHASE, GameState.ARENA_PHASE]
+
+
+func add_coins(player_id: int, amount: int) -> void:
+	if not players.has(player_id):
+		# If no player specified, add to player 1 (single player mode)
+		if players.has(1):
+			player_id = 1
+		else:
+			# Register player 1 if not exists
+			register_player(1, "Player 1")
+			player_id = 1
+
+	player_coins[player_id] = player_coins.get(player_id, 0) + amount
+	if players.has(player_id):
+		players[player_id].coins = player_coins[player_id]
+
+	print("[GameManager] Player %d coins: +%d (total: %d)" % [player_id, amount, player_coins[player_id]])
+	coins_changed.emit(player_id, player_coins[player_id])
+
+
+func add_coins_local(amount: int) -> void:
+	# Add coins to the local player (for single player or when player_id isn't known)
+	var local_id = 1
+	if NetworkManager and NetworkManager.has_method("get_local_player_id"):
+		local_id = NetworkManager.get_local_player_id()
+	add_coins(local_id, amount)

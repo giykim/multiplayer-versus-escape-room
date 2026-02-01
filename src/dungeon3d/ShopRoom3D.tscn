@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3 uid="uid://shop_room_3d"]
+
+[ext_resource type="Script" path="res://src/dungeon3d/ShopRoom3D.gd" id="1_shop3d"]
+[ext_resource type="PackedScene" uid="uid://c3d_room_base" path="res://src/dungeon3d/Room3D.tscn" id="2_base_room"]
+
+[node name="ShopRoom3D" instance=ExtResource("2_base_room")]
+script = ExtResource("1_shop3d")

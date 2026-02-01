@@ -42,6 +42,9 @@ const WALL_THICKNESS: float = 0.3
 @onready var right_door: Area3D = $RightDoor if has_node("RightDoor") else null
 @onready var room_light: OmniLight3D = $RoomLight if has_node("RoomLight") else null
 
+# Total room count (set by dungeon)
+var total_rooms: int = 5
+
 # Room state
 var is_completed: bool = false
 var is_locked: bool = true
@@ -92,6 +95,7 @@ func initialize_from_data(room_data: DungeonGenerator.RoomData) -> void:
 
 	_setup_doors()
 	_setup_room_color()
+	_update_door_labels()
 	_initialize_room()
 
 	print("[Room3D %d] Initialized as %s (difficulty: %d)" % [
@@ -101,6 +105,29 @@ func initialize_from_data(room_data: DungeonGenerator.RoomData) -> void:
 	])
 
 
+## Update door labels based on room position
+func _update_door_labels() -> void:
+	# Update left door label
+	if left_door:
+		var label = left_door.get_node_or_null("DoorLabel")
+		if label and label is Label3D:
+			if has_left_door:
+				label.text = "<< BACK (Room %d)" % room_index
+				label.visible = true
+			else:
+				label.visible = false
+
+	# Update right door label
+	if right_door:
+		var label = right_door.get_node_or_null("DoorLabel")
+		if label and label is Label3D:
+			if has_right_door:
+				label.text = "NEXT (Room %d) >>" % (room_index + 2)
+				label.visible = true
+			else:
+				label.visible = false
+
+
 ## Setup door areas and connections
 func _setup_doors() -> void:
 	if left_door:
@@ -108,14 +135,61 @@ func _setup_doors() -> void:
 		left_door.monitoring = has_left_door
 		if not left_door.body_entered.is_connected(_on_left_door_entered):
 			left_door.body_entered.connect(_on_left_door_entered)
+		# Create door blocker if it doesn't exist
+		_create_door_blocker(left_door, "left")
 
 	if right_door:
 		right_door.visible = has_right_door
 		right_door.monitoring = has_right_door
 		if not right_door.body_entered.is_connected(_on_right_door_entered):
 			right_door.body_entered.connect(_on_right_door_entered)
+		# Create door blocker if it doesn't exist
+		_create_door_blocker(right_door, "right")
 
+	# Handle walls when door doesn't exist
+	_update_wall_cutouts()
 	_update_door_visuals()
+
+
+## Create a StaticBody3D to block player when door is locked
+func _create_door_blocker(door: Area3D, direction: String) -> void:
+	var blocker_name = "DoorBlocker"
+	if door.has_node(blocker_name):
+		return  # Already exists
+
+	var blocker = StaticBody3D.new()
+	blocker.name = blocker_name
+	blocker.collision_layer = 2  # World geometry layer
+
+	var shape = CollisionShape3D.new()
+	var box = BoxShape3D.new()
+	box.size = Vector3(0.3, 2.3, 1.4)
+	shape.shape = box
+	blocker.add_child(shape)
+
+	door.add_child(blocker)
+
+
+## Update wall cutouts based on whether doors exist
+func _update_wall_cutouts() -> void:
+	# If no left door, fill the cutout
+	var left_wall = get_node_or_null("LeftWallCombo")
+	if left_wall:
+		var cutout = left_wall.get_node_or_null("DoorCutout")
+		if cutout:
+			cutout.visible = has_left_door
+			# If no door, we need to fill the hole - hide the cutout operation
+			if not has_left_door:
+				cutout.operation = 0  # Union instead of subtraction
+
+	# If no right door, fill the cutout
+	var right_wall = get_node_or_null("RightWallCombo")
+	if right_wall:
+		var cutout = right_wall.get_node_or_null("DoorCutout")
+		if cutout:
+			cutout.visible = has_right_door
+			if not has_right_door:
+				cutout.operation = 0  # Union instead of subtraction
 
 
 ## Setup room color based on room type
@@ -189,26 +263,56 @@ func activate() -> void:
 ## Update door visual states
 func _update_door_visuals() -> void:
 	# Update left door
-	if left_door:
-		var left_mesh = left_door.get_node_or_null("MeshInstance3D")
-		if left_mesh and left_mesh is MeshInstance3D:
+	if left_door and has_left_door:
+		var door_panel = left_door.get_node_or_null("DoorPanel")
+		var door_blocker = left_door.get_node_or_null("DoorBlocker")
+
+		if door_panel and door_panel is MeshInstance3D:
 			var material = StandardMaterial3D.new()
-			material.albedo_color = Color.RED if doors_locked["left"] else Color.GREEN
-			material.emission_enabled = true
-			material.emission = material.albedo_color
-			material.emission_energy_multiplier = 0.5
-			left_mesh.material_override = material
+			if doors_locked["left"]:
+				material.albedo_color = Color(0.5, 0.1, 0.1)  # Red - locked
+				material.emission_enabled = true
+				material.emission = Color(0.6, 0, 0)
+				material.emission_energy_multiplier = 0.3
+				door_panel.visible = true
+				if door_blocker:
+					door_blocker.collision_layer = 2  # Enable collision
+			else:
+				material.albedo_color = Color(0.1, 0.5, 0.1)  # Green - unlocked
+				material.emission_enabled = true
+				material.emission = Color(0, 0.6, 0)
+				material.emission_energy_multiplier = 0.3
+				# Hide door panel when unlocked (door is open)
+				door_panel.visible = false
+				if door_blocker:
+					door_blocker.collision_layer = 0  # Disable collision
+			door_panel.material_override = material
 
 	# Update right door
-	if right_door:
-		var right_mesh = right_door.get_node_or_null("MeshInstance3D")
-		if right_mesh and right_mesh is MeshInstance3D:
+	if right_door and has_right_door:
+		var door_panel = right_door.get_node_or_null("DoorPanel")
+		var door_blocker = right_door.get_node_or_null("DoorBlocker")
+
+		if door_panel and door_panel is MeshInstance3D:
 			var material = StandardMaterial3D.new()
-			material.albedo_color = Color.RED if doors_locked["right"] else Color.GREEN
-			material.emission_enabled = true
-			material.emission = material.albedo_color
-			material.emission_energy_multiplier = 0.5
-			right_mesh.material_override = material
+			if doors_locked["right"]:
+				material.albedo_color = Color(0.5, 0.1, 0.1)  # Red - locked
+				material.emission_enabled = true
+				material.emission = Color(0.6, 0, 0)
+				material.emission_energy_multiplier = 0.3
+				door_panel.visible = true
+				if door_blocker:
+					door_blocker.collision_layer = 2  # Enable collision
+			else:
+				material.albedo_color = Color(0.1, 0.5, 0.1)  # Green - unlocked
+				material.emission_enabled = true
+				material.emission = Color(0, 0.6, 0)
+				material.emission_energy_multiplier = 0.3
+				# Hide door panel when unlocked (door is open)
+				door_panel.visible = false
+				if door_blocker:
+					door_blocker.collision_layer = 0  # Disable collision
+			door_panel.material_override = material
 
 
 ## Lock or unlock a door

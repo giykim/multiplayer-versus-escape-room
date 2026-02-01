@@ -94,8 +94,8 @@ func generate(seed_value: int) -> DungeonLayout:
 func _generate_room_sequence(layout: DungeonLayout) -> void:
 	var room_count = layout.room_count
 
-	# First room is always a simple transit/starting room
-	var start_room = RoomData.new(0, RoomType.TRANSIT)
+	# First room is always a SHOP (players can return to buy items)
+	var start_room = RoomData.new(0, RoomType.SHOP)
 	start_room.seed_offset = _rng.randi()
 	layout.rooms.append(start_room)
 	layout.start_room_index = 0
@@ -105,14 +105,16 @@ func _generate_room_sequence(layout: DungeonLayout) -> void:
 	layout.arena_room_index = arena_index
 
 	# Calculate room distribution for middle rooms
-	var middle_room_count = room_count - 2  # Exclude start and arena
-	var puzzle_count = _rng.randi_range(MIN_PUZZLES, mini(MAX_PUZZLES, middle_room_count - 1))
+	var middle_room_count = room_count - 2  # Exclude start (shop) and arena
+	var puzzle_count = _rng.randi_range(MIN_PUZZLES, mini(MAX_PUZZLES, middle_room_count))
 	var treasure_count = _rng.randi_range(1, 2)
-	var shop_count = 1  # Always one shop
-	var transit_count = middle_room_count - puzzle_count - treasure_count - shop_count
+	# No transit rooms - only puzzles and treasure in the middle
+	# Adjust puzzle count to fill remaining slots
+	puzzle_count = maxi(puzzle_count, middle_room_count - treasure_count)
 
-	# Ensure we have valid counts
-	transit_count = maxi(transit_count, 0)
+	# Ensure we don't exceed middle room count
+	if puzzle_count + treasure_count > middle_room_count:
+		puzzle_count = middle_room_count - treasure_count
 
 	# Create pool of room types
 	var room_pool: Array[RoomType] = []
@@ -120,10 +122,6 @@ func _generate_room_sequence(layout: DungeonLayout) -> void:
 		room_pool.append(RoomType.PUZZLE)
 	for i in treasure_count:
 		room_pool.append(RoomType.TREASURE)
-	for i in shop_count:
-		room_pool.append(RoomType.SHOP)
-	for i in transit_count:
-		room_pool.append(RoomType.TRANSIT)
 
 	# Shuffle the pool
 	_shuffle_array(room_pool)

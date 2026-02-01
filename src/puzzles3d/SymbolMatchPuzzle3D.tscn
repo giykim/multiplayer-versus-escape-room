@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://symbol_puzzle_3d"]
+
+[ext_resource type="Script" path="res://src/puzzles3d/SymbolMatchPuzzle3D.gd" id="1_symbol"]
+
+[node name="SymbolMatchPuzzle3D" type="Node3D"]
+script = ExtResource("1_symbol")

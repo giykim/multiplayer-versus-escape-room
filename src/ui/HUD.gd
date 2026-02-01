@@ -5,6 +5,7 @@ extends CanvasLayer
 @onready var coin_label: Label = %CoinLabel
 @onready var timer_label: Label = %TimerLabel
 @onready var puzzle_progress: Label = %PuzzleProgress
+@onready var room_progress: Label = %RoomProgress
 @onready var advantages_container: VBoxContainer = %AdvantagesContainer
 @onready var minimap_container: Control = %MinimapContainer
 @onready var interaction_prompt: Label = %InteractionPrompt
@@ -16,6 +17,10 @@ var timer_running: bool = false
 # Local player tracking
 var local_player_id: int = 0
 
+# Room tracking
+var current_room: int = 1
+var total_rooms: int = 5
+
 
 func _ready() -> void:
 	# Add to hud group for easy finding
@@ -25,17 +30,28 @@ func _ready() -> void:
 	if GameManager:
 		GameManager.game_state_changed.connect(_on_game_state_changed)
 		GameManager.puzzle_completed.connect(_on_puzzle_completed)
+		if GameManager.has_signal("coins_changed"):
+			GameManager.coins_changed.connect(_on_coins_changed)
 
 	# Initialize display
 	_update_coins(0)
 	_update_timer(0.0)
 	_update_puzzle_progress(0, 0)
+	_update_room_progress(1, 5)
 
 	# Hide interaction prompt initially
 	if interaction_prompt:
 		interaction_prompt.visible = false
 
 	print("[HUD] Ready")
+
+
+## Connect to dungeon signals for room tracking
+func connect_to_dungeon(dungeon: Node) -> void:
+	if dungeon.has_signal("room_changed"):
+		dungeon.room_changed.connect(_on_room_changed)
+	if dungeon.has_signal("dungeon_generated"):
+		dungeon.dungeon_generated.connect(_on_dungeon_generated)
 
 
 func _process(delta: float) -> void:
@@ -101,6 +117,35 @@ func _update_puzzle_progress(solved: int, total: int) -> void:
 		puzzle_progress.text = "Puzzles: %d/%d" % [solved, total]
 	else:
 		puzzle_progress.text = "Puzzles: --"
+
+
+func _update_room_progress(room: int, total: int) -> void:
+	current_room = room
+	total_rooms = total
+	if room_progress:
+		room_progress.text = "Room: %d/%d" % [room, total]
+
+
+func _on_room_changed(old_room: int, new_room: int) -> void:
+	_update_room_progress(new_room + 1, total_rooms)
+
+
+func _on_dungeon_generated(room_count: int) -> void:
+	total_rooms = room_count
+	_update_room_progress(1, room_count)
+	# Reset coins at start of new dungeon
+	_update_coins(0)
+
+
+func _on_coins_changed(player_id: int, new_total: int) -> void:
+	# Update coins display when any player's coins change
+	if player_id == local_player_id or local_player_id == 0:
+		_update_coins(new_total)
+		# Flash effect for coin pickup
+		if coin_label:
+			var tween = create_tween()
+			tween.tween_property(coin_label, "modulate", Color(1, 1, 0), 0.1)
+			tween.tween_property(coin_label, "modulate", Color.WHITE, 0.2)
 
 
 func _update_advantages(advantages: Array) -> void:

@@ -3,16 +3,16 @@ class_name PuzzleRoom3D
 ## PuzzleRoom3D - 3D room variant that spawns and manages a puzzle
 ## Door is locked until the puzzle is solved
 
-# Default 3D puzzle panel used for all puzzle types until specialized versions are created
+# Default 3D puzzle panel (color memorization)
 const DEFAULT_3D_PUZZLE: String = "res://src/puzzles3d/InteractivePuzzlePanel.tscn"
 
-# Puzzle scene paths (extend as more 3D puzzles are created)
+# Puzzle scene paths for each puzzle type
 const PUZZLE_SCENES_3D: Dictionary = {
-	"sliding_tile": "res://src/puzzles3d/InteractivePuzzlePanel.tscn",
-	"pattern_match": "res://src/puzzles3d/InteractivePuzzlePanel.tscn",
-	"wire_connect": "res://src/puzzles3d/InteractivePuzzlePanel.tscn",
+	"sliding_tile": "res://src/puzzles3d/SlidingTilePuzzle3D.tscn",
+	"pattern_match": "res://src/puzzles3d/SymbolMatchPuzzle3D.tscn",
+	"wire_connect": "res://src/puzzles3d/WireConnectPuzzle3D.tscn",
 	"sequence_memory": "res://src/puzzles3d/InteractivePuzzlePanel.tscn",
-	"lock_pick": "res://src/puzzles3d/InteractivePuzzlePanel.tscn"
+	"lock_pick": "res://src/puzzles3d/SymbolMatchPuzzle3D.tscn"
 }
 
 # Fallback to 2D puzzles rendered on a viewport (if 3D version doesn't exist)
@@ -49,8 +49,8 @@ func _spawn_puzzle() -> void:
 
 	print("[PuzzleRoom3D %d] Spawning puzzle type: %s" % [room_index, puzzle_type])
 
-	# Always use the default 3D puzzle panel
-	var puzzle_scene_path = DEFAULT_3D_PUZZLE
+	# Get puzzle scene path based on puzzle type
+	var puzzle_scene_path = PUZZLE_SCENES_3D.get(puzzle_type, DEFAULT_3D_PUZZLE)
 
 	# Check if the scene exists
 	if not ResourceLoader.exists(puzzle_scene_path):
@@ -70,10 +70,10 @@ func _spawn_puzzle() -> void:
 		set_door_locked("right", false)
 		return
 
-	# Position puzzle in the center of the room, facing the player spawn
-	# Player spawns at (-3, 1, 0), so puzzle should be at center facing that direction
-	current_puzzle.position = Vector3(0, 1.5, 0)  # Center of room, at eye level
-	current_puzzle.rotation.y = deg_to_rad(180)  # Face toward the left side where player spawns
+	# Position puzzle on the BACK WALL, facing the player
+	# Player spawns at (0, 1, 3), puzzle should be on back wall at z=-4.9
+	current_puzzle.position = Vector3(0, 1.5, -4.9)  # On back wall, at eye level
+	current_puzzle.rotation.y = 0  # Face forward toward player spawn
 
 	# Initialize puzzle with room seed
 	var puzzle_seed_value = room_seed

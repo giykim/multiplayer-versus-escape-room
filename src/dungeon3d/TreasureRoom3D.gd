@@ -29,10 +29,15 @@ func _ready() -> void:
 	# Force room type to TREASURE
 	room_type = RoomType.TREASURE
 
-	# Treasure rooms have unlocked doors
-	doors_locked["right"] = false
+	# Treasure rooms have LOCKED doors until chest is opened
+	doors_locked["right"] = true
 
 	super._ready()
+
+
+## Override - treasure rooms lock door until chest is opened
+func _should_lock_forward_door() -> bool:
+	return true  # Locked until chest is opened
 
 
 ## Override to setup treasure content
@@ -216,6 +221,9 @@ func _spawn_placeholder_chest() -> void:
 	chest.add_child(interact_area)
 	add_child(chest)
 
+	# Add indicator label above chest
+	_spawn_chest_indicator(chest)
+
 
 ## Spawn a random item pickup
 func _spawn_random_item(rng: RandomNumberGenerator) -> void:
@@ -253,8 +261,11 @@ func _on_coin_picked_up(value: int = 1) -> void:
 	print("[TreasureRoom3D %d] Coin collected (%d/%d)" % [room_index, coins_collected, total_coins])
 
 	# Notify GameManager of coin pickup
-	if GameManager and GameManager.has_method("add_coins"):
-		GameManager.add_coins(value)
+	if GameManager and GameManager.has_method("add_coins_local"):
+		GameManager.add_coins_local(value)
+
+	# Update HUD
+	_update_hud_coins()
 
 
 func _on_placeholder_coin_touched(body: Node3D, coin: Node3D) -> void:
@@ -265,13 +276,28 @@ func _on_placeholder_coin_touched(body: Node3D, coin: Node3D) -> void:
 		print("[TreasureRoom3D %d] Placeholder coin collected (%d/%d)" % [room_index, coins_collected, total_coins])
 
 		# Notify GameManager
-		if GameManager and GameManager.has_method("add_coins"):
-			GameManager.add_coins(1)
+		if GameManager and GameManager.has_method("add_coins_local"):
+			GameManager.add_coins_local(1)
+
+		# Update HUD
+		_update_hud_coins()
 
 
 func _on_chest_opened(contents: Array = []) -> void:
+	if chest_opened:
+		return
 	chest_opened = true
-	print("[TreasureRoom3D %d] Chest opened" % room_index)
+	print("[TreasureRoom3D %d] Chest opened - unlocking door!" % room_index)
+
+	# Give bonus coins
+	if GameManager and GameManager.has_method("add_coins_local"):
+		GameManager.add_coins_local(5)
+
+	# Update HUD
+	_update_hud_coins()
+
+	# UNLOCK THE DOOR when chest is opened
+	complete_room()
 
 
 func _on_placeholder_chest_touched(body: Node3D) -> void:
@@ -280,13 +306,65 @@ func _on_placeholder_chest_touched(body: Node3D) -> void:
 
 	if body.has_method("get_player_id"):
 		chest_opened = true
-		print("[TreasureRoom3D %d] Placeholder chest opened" % room_index)
+		print("[TreasureRoom3D %d] Placeholder chest opened - unlocking door!" % room_index)
+
+		# Hide the indicator
+		_hide_chest_indicator()
 
 		# Give bonus coins
-		if GameManager and GameManager.has_method("add_coins"):
-			GameManager.add_coins(5)
+		if GameManager and GameManager.has_method("add_coins_local"):
+			GameManager.add_coins_local(5)
+
+		# Update HUD
+		_update_hud_coins()
+
+		# UNLOCK THE DOOR when chest is opened
+		complete_room()
+
+
+func _update_hud_coins() -> void:
+	# Find and update HUD
+	var hud_nodes = get_tree().get_nodes_in_group("hud")
+	if hud_nodes.size() > 0:
+		var hud = hud_nodes[0]
+		if hud.has_method("_update_coins"):
+			var local_id = 1
+			if NetworkManager and NetworkManager.has_method("get_local_player_id"):
+				local_id = NetworkManager.get_local_player_id()
+			var player_data = GameManager.get_player_data(local_id)
+			if player_data:
+				hud._update_coins(player_data.coins)
 
 
 func _on_item_picked_up(item_id: String) -> void:
 	items_collected.append(item_id)
 	print("[TreasureRoom3D %d] Item collected: %s" % [room_index, item_id])
+
+
+## Spawn indicator label above chest
+func _spawn_chest_indicator(chest: Node3D) -> void:
+	var indicator = Label3D.new()
+	indicator.name = "ChestIndicator"
+	indicator.text = "OPEN CHEST TO PROCEED"
+	indicator.font_size = 32
+	indicator.pixel_size = 0.008
+	indicator.position = Vector3(0, 1.2, 0)  # Above the chest
+	indicator.modulate = Color(1.0, 0.9, 0.3)
+	indicator.outline_size = 12
+	indicator.outline_modulate = Color(0, 0, 0)
+	indicator.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	chest.add_child(indicator)
+
+	# Add pulsing animation
+	var tween = create_tween().set_loops()
+	tween.tween_property(indicator, "modulate:a", 0.5, 0.8)
+	tween.tween_property(indicator, "modulate:a", 1.0, 0.8)
+
+
+## Hide the chest indicator when opened
+func _hide_chest_indicator() -> void:
+	var chest = get_node_or_null("TreasureChest")
+	if chest:
+		var indicator = chest.get_node_or_null("ChestIndicator")
+		if indicator:
+			indicator.queue_free()

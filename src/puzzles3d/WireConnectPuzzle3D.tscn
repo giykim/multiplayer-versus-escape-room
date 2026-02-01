@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://wire_puzzle_3d"]
+
+[ext_resource type="Script" path="res://src/puzzles3d/WireConnectPuzzle3D.gd" id="1_wire"]
+
+[node name="WireConnectPuzzle3D" type="Node3D"]
+script = ExtResource("1_wire")
