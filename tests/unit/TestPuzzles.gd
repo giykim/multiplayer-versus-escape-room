@@ -1,109 +1,191 @@
 extends BaseTest
-## TestPuzzles - Unit tests for puzzle systems
-
-var base_puzzle_script: Script
-var sliding_puzzle_script: Script
-var pattern_puzzle_script: Script
-var base_puzzle3d_script: Script
-
-
-func setup() -> void:
-	base_puzzle_script = load("res://src/puzzles/base/BasePuzzle.gd") if ResourceLoader.exists("res://src/puzzles/base/BasePuzzle.gd") else null
-	sliding_puzzle_script = load("res://src/puzzles/logic/SlidingTilePuzzle.gd") if ResourceLoader.exists("res://src/puzzles/logic/SlidingTilePuzzle.gd") else null
-	pattern_puzzle_script = load("res://src/puzzles/logic/PatternSequencePuzzle.gd") if ResourceLoader.exists("res://src/puzzles/logic/PatternSequencePuzzle.gd") else null
-	base_puzzle3d_script = load("res://src/puzzles3d/BasePuzzle3D.gd") if ResourceLoader.exists("res://src/puzzles3d/BasePuzzle3D.gd") else null
+## TestPuzzles - Comprehensive unit tests for puzzle systems
 
 
 func get_test_methods() -> Array[String]:
 	return [
-		"test_base_puzzle_exists",
-		"test_puzzle_has_completion_signal",
-		"test_puzzle_has_difficulty_system",
+		# Scene tests
+		"test_puzzle_panel_scene_exists",
+		"test_puzzle_panel_instantiates",
+
+		# Signal tests
+		"test_puzzle_has_solved_signal",
+		"test_puzzle_has_started_signal",
+		"test_puzzle_has_failed_signal",
+
+		# Method tests
+		"test_puzzle_has_interact_method",
+		"test_puzzle_has_start_method",
+		"test_puzzle_has_initialize_method",
+
+		# State tests
+		"test_puzzle_initial_state_inactive",
+		"test_puzzle_initial_state_unsolved",
+
+		# Configuration tests
+		"test_puzzle_has_difficulty",
+		"test_puzzle_difficulty_affects_presses",
+
+		# 2D puzzle tests
 		"test_sliding_puzzle_exists",
 		"test_pattern_puzzle_exists",
-		"test_puzzle3d_base_exists",
-		"test_puzzle3d_has_raycast_interaction",
 	]
 
 
-func test_base_puzzle_exists() -> Dictionary:
-	return assert_not_null(base_puzzle_script, "BasePuzzle.gd should exist")
+func test_puzzle_panel_scene_exists() -> Dictionary:
+	var exists = ResourceLoader.exists("res://src/puzzles3d/InteractivePuzzlePanel.tscn")
+	return assert_true(exists, "InteractivePuzzlePanel.tscn should exist")
 
 
-func test_puzzle_has_completion_signal() -> Dictionary:
-	if not base_puzzle_script:
-		return {"passed": false, "message": "BasePuzzle not loaded"}
+func test_puzzle_panel_instantiates() -> Dictionary:
+	var scene = load("res://src/puzzles3d/InteractivePuzzlePanel.tscn")
+	if not scene:
+		return {"passed": false, "message": "Could not load scene"}
 
-	var source = base_puzzle_script.source_code
-	var has_completed_signal = "signal puzzle_completed" in source
-	var has_is_completed = "is_completed" in source or "_is_completed" in source
+	var puzzle = scene.instantiate()
+	var valid = puzzle != null
 
-	var passed = has_completed_signal and has_is_completed
+	if puzzle:
+		puzzle.queue_free()
+
+	return assert_true(valid, "Puzzle should instantiate successfully")
+
+
+func test_puzzle_has_solved_signal() -> Dictionary:
+	var scene = load("res://src/puzzles3d/InteractivePuzzlePanel.tscn")
+	if not scene:
+		return {"passed": false, "message": "Could not load scene"}
+
+	var puzzle = scene.instantiate()
+	var has_signal = puzzle.has_signal("puzzle_solved")
+	puzzle.queue_free()
+
+	return assert_true(has_signal, "Puzzle should have puzzle_solved signal")
+
+
+func test_puzzle_has_started_signal() -> Dictionary:
+	var scene = load("res://src/puzzles3d/InteractivePuzzlePanel.tscn")
+	if not scene:
+		return {"passed": false, "message": "Could not load scene"}
+
+	var puzzle = scene.instantiate()
+	var has_signal = puzzle.has_signal("puzzle_started")
+	puzzle.queue_free()
+
+	return assert_true(has_signal, "Puzzle should have puzzle_started signal")
+
+
+func test_puzzle_has_failed_signal() -> Dictionary:
+	var scene = load("res://src/puzzles3d/InteractivePuzzlePanel.tscn")
+	if not scene:
+		return {"passed": false, "message": "Could not load scene"}
+
+	var puzzle = scene.instantiate()
+	var has_signal = puzzle.has_signal("puzzle_failed")
+	puzzle.queue_free()
+
+	return assert_true(has_signal, "Puzzle should have puzzle_failed signal")
+
+
+func test_puzzle_has_interact_method() -> Dictionary:
+	var scene = load("res://src/puzzles3d/InteractivePuzzlePanel.tscn")
+	if not scene:
+		return {"passed": false, "message": "Could not load scene"}
+
+	var puzzle = scene.instantiate()
+	var has_method = puzzle.has_method("interact")
+	puzzle.queue_free()
+
+	return assert_true(has_method, "Puzzle should have interact() method")
+
+
+func test_puzzle_has_start_method() -> Dictionary:
+	var scene = load("res://src/puzzles3d/InteractivePuzzlePanel.tscn")
+	if not scene:
+		return {"passed": false, "message": "Could not load scene"}
+
+	var puzzle = scene.instantiate()
+	var has_method = puzzle.has_method("start_puzzle")
+	puzzle.queue_free()
+
+	return assert_true(has_method, "Puzzle should have start_puzzle() method")
+
+
+func test_puzzle_has_initialize_method() -> Dictionary:
+	var scene = load("res://src/puzzles3d/InteractivePuzzlePanel.tscn")
+	if not scene:
+		return {"passed": false, "message": "Could not load scene"}
+
+	var puzzle = scene.instantiate()
+	var has_method = puzzle.has_method("initialize")
+	puzzle.queue_free()
+
+	return assert_true(has_method, "Puzzle should have initialize() method")
+
+
+func test_puzzle_initial_state_inactive() -> Dictionary:
+	var scene = load("res://src/puzzles3d/InteractivePuzzlePanel.tscn")
+	if not scene:
+		return {"passed": false, "message": "Could not load scene"}
+
+	var puzzle = scene.instantiate()
+	var is_inactive = puzzle.is_active == false
+	puzzle.queue_free()
+
+	return assert_true(is_inactive, "Puzzle should start inactive")
+
+
+func test_puzzle_initial_state_unsolved() -> Dictionary:
+	var scene = load("res://src/puzzles3d/InteractivePuzzlePanel.tscn")
+	if not scene:
+		return {"passed": false, "message": "Could not load scene"}
+
+	var puzzle = scene.instantiate()
+	var is_unsolved = puzzle.is_solved == false
+	puzzle.queue_free()
+
+	return assert_true(is_unsolved, "Puzzle should start unsolved")
+
+
+func test_puzzle_has_difficulty() -> Dictionary:
+	var scene = load("res://src/puzzles3d/InteractivePuzzlePanel.tscn")
+	if not scene:
+		return {"passed": false, "message": "Could not load scene"}
+
+	var puzzle = scene.instantiate()
+	var has_difficulty = "difficulty" in puzzle
+	puzzle.queue_free()
+
+	return assert_true(has_difficulty, "Puzzle should have difficulty property")
+
+
+func test_puzzle_difficulty_affects_presses() -> Dictionary:
+	var scene = load("res://src/puzzles3d/InteractivePuzzlePanel.tscn")
+	if not scene:
+		return {"passed": false, "message": "Could not load scene"}
+
+	var puzzle1 = scene.instantiate()
+	puzzle1.initialize(12345, 1)  # Low difficulty
+	var presses1 = puzzle1.presses_needed
+	puzzle1.queue_free()
+
+	var puzzle2 = scene.instantiate()
+	puzzle2.initialize(12345, 5)  # High difficulty
+	var presses2 = puzzle2.presses_needed
+	puzzle2.queue_free()
+
+	var harder = presses2 > presses1
 	return {
-		"passed": passed,
-		"message": "Completion system present" if passed else "Missing completion signal/state"
-	}
-
-
-func test_puzzle_has_difficulty_system() -> Dictionary:
-	if not base_puzzle_script:
-		return {"passed": false, "message": "BasePuzzle not loaded"}
-
-	var source = base_puzzle_script.source_code
-	var has_difficulty = "difficulty" in source.to_lower()
-
-	return {
-		"passed": has_difficulty,
-		"message": "Difficulty system present" if has_difficulty else "Missing difficulty configuration"
+		"passed": harder,
+		"message": "Difficulty 1: %d presses, Difficulty 5: %d presses" % [presses1, presses2]
 	}
 
 
 func test_sliding_puzzle_exists() -> Dictionary:
-	if not sliding_puzzle_script:
-		return {"passed": false, "message": "SlidingTilePuzzle.gd not found"}
-
-	var source = sliding_puzzle_script.source_code
-	var extends_base = "extends" in source
-	var has_grid = "grid" in source.to_lower()
-	var has_move = "move" in source.to_lower()
-
-	var passed = extends_base and has_grid and has_move
-	return {
-		"passed": passed,
-		"message": "Sliding puzzle configured" if passed else "Sliding puzzle missing components"
-	}
+	var exists = ResourceLoader.exists("res://src/puzzles/logic/SlidingTilePuzzle.tscn")
+	return assert_true(exists, "SlidingTilePuzzle.tscn should exist")
 
 
 func test_pattern_puzzle_exists() -> Dictionary:
-	if not pattern_puzzle_script:
-		return {"passed": false, "message": "PatternSequencePuzzle.gd not found"}
-
-	var source = pattern_puzzle_script.source_code
-	var extends_base = "extends" in source
-	var has_pattern = "pattern" in source.to_lower()
-	var has_sequence = "sequence" in source.to_lower()
-
-	var passed = extends_base and has_pattern and has_sequence
-	return {
-		"passed": passed,
-		"message": "Pattern puzzle configured" if passed else "Pattern puzzle missing components"
-	}
-
-
-func test_puzzle3d_base_exists() -> Dictionary:
-	return assert_not_null(base_puzzle3d_script, "BasePuzzle3D.gd should exist")
-
-
-func test_puzzle3d_has_raycast_interaction() -> Dictionary:
-	if not base_puzzle3d_script:
-		return {"passed": false, "message": "BasePuzzle3D not loaded"}
-
-	var source = base_puzzle3d_script.source_code
-	var has_raycast = "raycast" in source.to_lower() or "ray" in source.to_lower()
-	var has_interact = "interact" in source.to_lower()
-
-	var passed = has_interact  # Raycast may be optional
-	return {
-		"passed": passed,
-		"message": "3D interaction present" if passed else "Missing 3D interaction"
-	}
+	var exists = ResourceLoader.exists("res://src/puzzles/logic/PatternSequencePuzzle.tscn")
+	return assert_true(exists, "PatternSequencePuzzle.tscn should exist")

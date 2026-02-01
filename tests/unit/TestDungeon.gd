@@ -1,101 +1,235 @@
 extends BaseTest
-## TestDungeon - Unit tests for dungeon generation
+## TestDungeon - Comprehensive unit tests for dungeon generation
 
-var dungeon_generator_script: Script
-var dungeon_script: Script
-var room_script: Script
-var room3d_script: Script
+var generator: DungeonGenerator
 
 
 func setup() -> void:
-	dungeon_generator_script = load("res://src/dungeon/DungeonGenerator.gd") if ResourceLoader.exists("res://src/dungeon/DungeonGenerator.gd") else null
-	dungeon_script = load("res://src/dungeon/Dungeon.gd") if ResourceLoader.exists("res://src/dungeon/Dungeon.gd") else null
-	room_script = load("res://src/dungeon/Room.gd") if ResourceLoader.exists("res://src/dungeon/Room.gd") else null
-	room3d_script = load("res://src/dungeon3d/Room3D.gd") if ResourceLoader.exists("res://src/dungeon3d/Room3D.gd") else null
+	generator = DungeonGenerator.new()
 
 
 func get_test_methods() -> Array[String]:
 	return [
-		"test_dungeon_generator_exists",
-		"test_generator_has_seed_system",
-		"test_generator_has_room_types",
-		"test_dungeon_container_exists",
-		"test_room_base_exists",
-		"test_room_has_door_system",
-		"test_room3d_exists",
-		"test_room3d_has_3d_geometry",
+		# Generator existence tests
+		"test_generator_creates_layout",
+		"test_generator_returns_valid_layout",
+
+		# Room count tests
+		"test_room_count_in_valid_range",
+		"test_minimum_room_count_enforced",
+
+		# Room type tests
+		"test_first_room_is_transit",
+		"test_last_room_is_arena",
+		"test_has_puzzle_rooms",
+		"test_puzzle_rooms_have_types",
+
+		# Connection tests
+		"test_all_rooms_connected",
+		"test_room_connections_are_bidirectional",
+
+		# Seed tests
+		"test_same_seed_produces_same_layout",
+		"test_different_seeds_produce_different_layouts",
+
+		# Difficulty tests
+		"test_difficulty_increases_with_progress",
+		"test_difficulty_in_valid_range",
+
+		# Validation tests
+		"test_layout_passes_validation",
+		"test_arena_room_index_set",
 	]
 
 
-func test_dungeon_generator_exists() -> Dictionary:
-	return assert_not_null(dungeon_generator_script, "DungeonGenerator.gd should exist")
+func test_generator_creates_layout() -> Dictionary:
+	var layout = generator.generate(12345)
+	return assert_not_null(layout, "Generator should create a layout")
 
 
-func test_generator_has_seed_system() -> Dictionary:
-	if not dungeon_generator_script:
-		return {"passed": false, "message": "DungeonGenerator not loaded"}
+func test_generator_returns_valid_layout() -> Dictionary:
+	var layout = generator.generate(12345)
+	if layout == null:
+		return {"passed": false, "message": "Layout is null"}
+	return assert_true(layout is DungeonGenerator.DungeonLayout, "Layout should be DungeonLayout type")
 
-	var source = dungeon_generator_script.source_code
-	var has_seed = "seed" in source.to_lower()
-	var has_rng = "rng" in source.to_lower() or "random" in source.to_lower()
 
-	var passed = has_seed or has_rng
+func test_room_count_in_valid_range() -> Dictionary:
+	var layout = generator.generate(12345)
+	var count = layout.room_count
+	var in_range = count >= DungeonGenerator.MIN_ROOMS and count <= DungeonGenerator.MAX_ROOMS
 	return {
-		"passed": passed,
-		"message": "Seed/RNG system present" if passed else "Missing seed system"
+		"passed": in_range,
+		"message": "Room count %d in range [%d, %d]" % [count, DungeonGenerator.MIN_ROOMS, DungeonGenerator.MAX_ROOMS] if in_range else "Room count %d out of range" % count
 	}
 
 
-func test_generator_has_room_types() -> Dictionary:
-	if not dungeon_generator_script:
-		return {"passed": false, "message": "DungeonGenerator not loaded"}
+func test_minimum_room_count_enforced() -> Dictionary:
+	# Test with multiple seeds to ensure minimum is always met
+	for seed_val in [1, 100, 999, 12345, 99999]:
+		var gen = DungeonGenerator.new()
+		var layout = gen.generate(seed_val)
+		if layout.room_count < DungeonGenerator.MIN_ROOMS:
+			return {"passed": false, "message": "Seed %d produced only %d rooms" % [seed_val, layout.room_count]}
+	return {"passed": true, "message": "Minimum room count enforced across seeds"}
 
-	var source = dungeon_generator_script.source_code
-	var has_room_types = "room_type" in source.to_lower() or "RoomType" in source
 
+func test_first_room_is_transit() -> Dictionary:
+	var layout = generator.generate(12345)
+	var first_room = layout.get_room(0)
+	return assert_equals(first_room.type, DungeonGenerator.RoomType.TRANSIT, "First room should be TRANSIT")
+
+
+func test_last_room_is_arena() -> Dictionary:
+	var layout = generator.generate(12345)
+	var last_room = layout.get_room(layout.room_count - 1)
+	return assert_equals(last_room.type, DungeonGenerator.RoomType.ARENA, "Last room should be ARENA")
+
+
+func test_has_puzzle_rooms() -> Dictionary:
+	var layout = generator.generate(12345)
+	var puzzle_count = 0
+	for room in layout.rooms:
+		if room.type == DungeonGenerator.RoomType.PUZZLE:
+			puzzle_count += 1
+
+	var has_puzzles = puzzle_count >= DungeonGenerator.MIN_PUZZLES
 	return {
-		"passed": has_room_types,
-		"message": "Room types present" if has_room_types else "Missing room type system"
+		"passed": has_puzzles,
+		"message": "Found %d puzzle rooms (min: %d)" % [puzzle_count, DungeonGenerator.MIN_PUZZLES]
 	}
 
 
-func test_dungeon_container_exists() -> Dictionary:
-	return assert_not_null(dungeon_script, "Dungeon.gd should exist")
+func test_puzzle_rooms_have_types() -> Dictionary:
+	var layout = generator.generate(12345)
+	for room in layout.rooms:
+		if room.type == DungeonGenerator.RoomType.PUZZLE:
+			if room.puzzle_type.is_empty():
+				return {"passed": false, "message": "Puzzle room %d has no puzzle_type" % room.index}
+	return {"passed": true, "message": "All puzzle rooms have puzzle types"}
 
 
-func test_room_base_exists() -> Dictionary:
-	return assert_not_null(room_script, "Room.gd should exist")
+func test_all_rooms_connected() -> Dictionary:
+	var layout = generator.generate(12345)
+	for i in range(layout.room_count):
+		var room = layout.get_room(i)
+		# First room should have right connection only
+		if i == 0:
+			if not room.connections.has("right"):
+				return {"passed": false, "message": "First room missing right connection"}
+		# Last room should have left connection only
+		elif i == layout.room_count - 1:
+			if not room.connections.has("left"):
+				return {"passed": false, "message": "Last room missing left connection"}
+		# Middle rooms should have both
+		else:
+			if not room.connections.has("left") or not room.connections.has("right"):
+				return {"passed": false, "message": "Room %d missing connections" % i}
+	return {"passed": true, "message": "All rooms properly connected"}
 
 
-func test_room_has_door_system() -> Dictionary:
-	if not room_script:
-		return {"passed": false, "message": "Room not loaded"}
+func test_room_connections_are_bidirectional() -> Dictionary:
+	var layout = generator.generate(12345)
+	for room in layout.rooms:
+		for direction in room.connections:
+			var target_index = room.connections[direction]
+			var target_room = layout.get_room(target_index)
 
-	var source = room_script.source_code
-	var has_doors = "door" in source.to_lower()
-	var has_connections = "connect" in source.to_lower() or "neighbor" in source.to_lower()
+			var reverse_dir = "left" if direction == "right" else "right"
+			if not target_room.connections.has(reverse_dir):
+				return {"passed": false, "message": "Room %d -> %d not bidirectional" % [room.index, target_index]}
+			if target_room.connections[reverse_dir] != room.index:
+				return {"passed": false, "message": "Room %d <-> %d connection mismatch" % [room.index, target_index]}
 
-	var passed = has_doors
+	return {"passed": true, "message": "All connections are bidirectional"}
+
+
+func test_same_seed_produces_same_layout() -> Dictionary:
+	var seed_val = 42424242
+	var layout1 = generator.generate(seed_val)
+	var gen2 = DungeonGenerator.new()
+	var layout2 = gen2.generate(seed_val)
+
+	if layout1.room_count != layout2.room_count:
+		return {"passed": false, "message": "Different room counts with same seed"}
+
+	for i in range(layout1.room_count):
+		var r1 = layout1.get_room(i)
+		var r2 = layout2.get_room(i)
+		if r1.type != r2.type:
+			return {"passed": false, "message": "Room %d type mismatch with same seed" % i}
+		if r1.puzzle_type != r2.puzzle_type:
+			return {"passed": false, "message": "Room %d puzzle_type mismatch with same seed" % i}
+
+	return {"passed": true, "message": "Same seed produces identical layouts"}
+
+
+func test_different_seeds_produce_different_layouts() -> Dictionary:
+	var layout1 = generator.generate(11111)
+	var gen2 = DungeonGenerator.new()
+	var layout2 = gen2.generate(22222)
+
+	# Check if any puzzle types differ
+	var differences = 0
+	var min_count = mini(layout1.room_count, layout2.room_count)
+	for i in range(min_count):
+		var r1 = layout1.get_room(i)
+		var r2 = layout2.get_room(i)
+		if r1.type != r2.type or r1.puzzle_type != r2.puzzle_type:
+			differences += 1
+
+	# Should have at least some differences
 	return {
-		"passed": passed,
-		"message": "Door system present" if passed else "Missing door system"
+		"passed": differences > 0 or layout1.room_count != layout2.room_count,
+		"message": "Found %d differences between layouts" % differences
 	}
 
 
-func test_room3d_exists() -> Dictionary:
-	return assert_not_null(room3d_script, "Room3D.gd should exist")
+func test_difficulty_increases_with_progress() -> Dictionary:
+	var layout = generator.generate(12345)
 
+	# Check that later rooms tend to have higher difficulty
+	var early_avg = 0.0
+	var late_avg = 0.0
+	var early_count = 0
+	var late_count = 0
 
-func test_room3d_has_3d_geometry() -> Dictionary:
-	if not room3d_script:
-		return {"passed": false, "message": "Room3D not loaded"}
+	var mid_point = layout.room_count / 2
+	for room in layout.rooms:
+		if room.index < mid_point:
+			early_avg += room.difficulty
+			early_count += 1
+		else:
+			late_avg += room.difficulty
+			late_count += 1
 
-	var source = room3d_script.source_code
-	var has_3d_elements = "CSG" in source or "Mesh" in source or "StaticBody3D" in source
-	var has_dimensions = "width" in source.to_lower() or "size" in source.to_lower()
+	if early_count > 0:
+		early_avg /= early_count
+	if late_count > 0:
+		late_avg /= late_count
 
-	var passed = has_3d_elements or has_dimensions
+	# Late rooms should generally have higher difficulty
 	return {
-		"passed": passed,
-		"message": "3D geometry present" if passed else "Missing 3D geometry"
+		"passed": late_avg >= early_avg,
+		"message": "Early avg: %.1f, Late avg: %.1f" % [early_avg, late_avg]
 	}
+
+
+func test_difficulty_in_valid_range() -> Dictionary:
+	var layout = generator.generate(12345)
+	for room in layout.rooms:
+		if room.difficulty < 1 or room.difficulty > 5:
+			return {"passed": false, "message": "Room %d has invalid difficulty: %d" % [room.index, room.difficulty]}
+	return {"passed": true, "message": "All difficulties in range [1, 5]"}
+
+
+func test_layout_passes_validation() -> Dictionary:
+	var layout = generator.generate(12345)
+	var is_valid = generator.validate_layout(layout)
+	return assert_true(is_valid, "Generated layout should pass validation")
+
+
+func test_arena_room_index_set() -> Dictionary:
+	var layout = generator.generate(12345)
+	var expected_arena = layout.room_count - 1
+	return assert_equals(layout.arena_room_index, expected_arena, "Arena should be last room")
