@@ -2,6 +2,7 @@ extends Control
 ## MainMenu - Main menu screen for the game
 ## Handles navigation to lobby, settings, and game exit
 
+@onready var single_player_button: Button = %SinglePlayerButton
 @onready var host_button: Button = %HostButton
 @onready var join_button: Button = %JoinButton
 @onready var settings_button: Button = %SettingsButton
@@ -10,6 +11,8 @@ extends Control
 
 func _ready() -> void:
 	# Connect button signals (with null checks)
+	if single_player_button:
+		single_player_button.pressed.connect(_on_single_player_pressed)
 	if host_button:
 		host_button.pressed.connect(_on_host_pressed)
 	if join_button:
@@ -28,6 +31,19 @@ func _ready() -> void:
 		AudioManager.play_music(AudioManager.MusicTrack.MENU)
 
 	print("[MainMenu] Ready")
+
+
+func _on_single_player_pressed() -> void:
+	if AudioManager:
+		AudioManager.play_ui_click()
+
+	# Register single player
+	if GameManager:
+		GameManager.register_player(1, "Player")
+		GameManager.start_match(randi())
+
+	# Go directly to game scene
+	get_tree().change_scene_to_file("res://src/Game3D.tscn")
 
 
 func _on_host_pressed() -> void:

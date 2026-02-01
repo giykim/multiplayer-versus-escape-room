@@ -8,6 +8,7 @@ signal server_disconnected()
 signal player_connected(peer_id: int)
 signal player_disconnected(peer_id: int)
 signal lobby_updated(player_list: Array)
+signal game_started()  # Emitted when all peers should transition to game scene
 
 const DEFAULT_PORT: int = 7777
 const MAX_CLIENTS: int = 3  # Plus host = 4 players
@@ -157,16 +158,26 @@ func _sync_lobby(players: Dictionary) -> void:
 
 # Game state synchronization
 
-@rpc("authority", "reliable")
+@rpc("authority", "call_local", "reliable")
 func start_game(seed_value: int) -> void:
-	GameManager.start_match(seed_value)
+	if GameManager:
+		GameManager.start_match(seed_value)
+
+
+@rpc("authority", "call_local", "reliable")
+func _transition_to_game() -> void:
+	# All peers (host and clients) receive this and transition to game scene
+	game_started.emit()
 
 
 func request_start_game() -> void:
 	if is_host:
 		var seed_value = randi()
-		# RPC will execute on all peers including host, so don't call locally
+		# Start game on all peers (including host with call_local)
 		start_game.rpc(seed_value)
+		# Small delay to ensure seed is synced, then transition all peers
+		await get_tree().create_timer(0.3).timeout
+		_transition_to_game.rpc()
 
 
 @rpc("any_peer", "reliable")

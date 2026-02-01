@@ -47,6 +47,7 @@ func _ready() -> void:
 		NetworkManager.lobby_updated.connect(_on_lobby_updated)
 		NetworkManager.player_connected.connect(_on_player_connected)
 		NetworkManager.player_disconnected.connect(_on_player_disconnected)
+		NetworkManager.game_started.connect(_load_game_scene)  # Scene transition for ALL peers
 
 	# Set default values
 	if port_input and NetworkManager:
@@ -204,12 +205,9 @@ func _on_start_pressed() -> void:
 		start_button.disabled = true
 
 	# Request game start through NetworkManager
+	# Scene transition is handled via game_started signal for ALL peers (host + clients)
 	if NetworkManager:
 		NetworkManager.request_start_game()
-
-	# Transition to game scene
-	await get_tree().create_timer(0.5).timeout
-	_load_game_scene()
 
 
 func _on_ready_pressed() -> void:
