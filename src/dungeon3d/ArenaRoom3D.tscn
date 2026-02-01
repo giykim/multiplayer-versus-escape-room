@@ -1,0 +1,108 @@
+[gd_scene load_steps=6 format=3 uid="uid://c3d_arena_room"]
+
+[ext_resource type="Script" path="res://src/dungeon3d/Room3D.gd" id="1_room3d"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
+albedo_color = Color(0.3, 0.15, 0.15, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.2, 0.1, 0.1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_door_red"]
+albedo_color = Color(0.8, 0, 0, 1)
+emission_enabled = true
+emission = Color(0.8, 0, 0, 1)
+emission_energy_multiplier = 0.5
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_door"]
+size = Vector3(0.5, 2.5, 1.5)
+
+[node name="ArenaRoom3D" type="Node3D"]
+script = ExtResource("1_room3d")
+room_type = 4
+
+# === FLOOR - Larger arena ===
+[node name="Floor" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.15, 0)
+use_collision = true
+collision_layer = 2
+size = Vector3(20, 0.3, 20)
+material = SubResource("StandardMaterial3D_floor")
+
+# === CEILING ===
+[node name="Ceiling" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.15, 0)
+use_collision = true
+collision_layer = 2
+size = Vector3(20, 0.3, 20)
+material = SubResource("StandardMaterial3D_wall")
+
+# === WALLS ===
+[node name="BackWall" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, -10.15)
+use_collision = true
+collision_layer = 2
+size = Vector3(20, 6, 0.3)
+material = SubResource("StandardMaterial3D_wall")
+
+[node name="FrontWall" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 10.15)
+use_collision = true
+collision_layer = 2
+size = Vector3(20, 6, 0.3)
+material = SubResource("StandardMaterial3D_wall")
+
+[node name="LeftWall" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.15, 3, 0)
+use_collision = true
+collision_layer = 2
+size = Vector3(0.3, 6, 20)
+material = SubResource("StandardMaterial3D_wall")
+
+[node name="RightWall" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.15, 3, 0)
+use_collision = true
+collision_layer = 2
+size = Vector3(0.3, 6, 20)
+material = SubResource("StandardMaterial3D_wall")
+
+# === ARENA LIGHTING ===
+[node name="ArenaLight1" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 5, -5)
+light_color = Color(1, 0.8, 0.8, 1)
+light_energy = 2.0
+omni_range = 15
+
+[node name="ArenaLight2" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 5, 5)
+light_color = Color(1, 0.8, 0.8, 1)
+light_energy = 2.0
+omni_range = 15
+
+[node name="ArenaLight3" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 5, -5)
+light_color = Color(1, 0.8, 0.8, 1)
+light_energy = 2.0
+omni_range = 15
+
+[node name="ArenaLight4" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 5, 5)
+light_color = Color(1, 0.8, 0.8, 1)
+light_energy = 2.0
+omni_range = 15
+
+# === SPAWN POINTS (4 corners for 4 players) ===
+[node name="PlayerSpawn" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.5, -7)
+
+[node name="PlayerSpawn2" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.5, -7)
+
+[node name="PlayerSpawn3" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.5, 7)
+
+[node name="PlayerSpawn4" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.5, 7)
+
+[node name="PuzzleSpawn" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)

@@ -94,6 +94,15 @@ func get_current_room() -> Room3D:
 	return loaded_rooms.get(current_room_index)
 
 
+## Get spawn position from the current room
+func get_player_spawn_position() -> Vector3:
+	var room = get_current_room()
+	if room and room.has_method("get_player_spawn_position"):
+		return room.get_player_spawn_position()
+	# Fallback: spawn in first room at reasonable height
+	return Vector3(0, 1.0, 0)
+
+
 ## Get a specific room (loads if necessary)
 func get_room(index: int) -> Room3D:
 	if not layout:
