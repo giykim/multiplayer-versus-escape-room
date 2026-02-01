@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://puzzle3d_panel"]
+
+[ext_resource type="Script" path="res://src/puzzles3d/InteractivePuzzlePanel.gd" id="1_puzzle"]
+
+[node name="InteractivePuzzlePanel" type="Node3D"]
+script = ExtResource("1_puzzle")

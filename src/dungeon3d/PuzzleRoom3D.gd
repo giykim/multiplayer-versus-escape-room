@@ -3,13 +3,16 @@ class_name PuzzleRoom3D
 ## PuzzleRoom3D - 3D room variant that spawns and manages a puzzle
 ## Door is locked until the puzzle is solved
 
+# Default 3D puzzle panel used for all puzzle types until specialized versions are created
+const DEFAULT_3D_PUZZLE: String = "res://src/puzzles3d/InteractivePuzzlePanel.tscn"
+
 # Puzzle scene paths (extend as more 3D puzzles are created)
 const PUZZLE_SCENES_3D: Dictionary = {
-	"sliding_tile": "res://src/puzzles/logic/SlidingTilePuzzle3D.tscn",
-	"pattern_match": "res://src/puzzles/logic/PatternMatchPuzzle3D.tscn",
-	"wire_connect": "res://src/puzzles/logic/WireConnectPuzzle3D.tscn",
-	"sequence_memory": "res://src/puzzles/logic/SequenceMemoryPuzzle3D.tscn",
-	"lock_pick": "res://src/puzzles/logic/LockPickPuzzle3D.tscn"
+	"sliding_tile": "res://src/puzzles3d/InteractivePuzzlePanel.tscn",
+	"pattern_match": "res://src/puzzles3d/InteractivePuzzlePanel.tscn",
+	"wire_connect": "res://src/puzzles3d/InteractivePuzzlePanel.tscn",
+	"sequence_memory": "res://src/puzzles3d/InteractivePuzzlePanel.tscn",
+	"lock_pick": "res://src/puzzles3d/InteractivePuzzlePanel.tscn"
 }
 
 # Fallback to 2D puzzles rendered on a viewport (if 3D version doesn't exist)
