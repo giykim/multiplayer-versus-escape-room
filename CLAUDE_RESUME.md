@@ -44,34 +44,52 @@ Use subagents for parallel development. Commit frequently."
 
 This project uses Claude subagents to simulate a dev team. Use these patterns:
 
-#### Launching Parallel Engineers
-```
-Use Task tool with subagent_type: "general-purpose" and run_in_background: true
-
-Example - launch 3 engineers in parallel:
-1. Task: "Engine Engineer: [task]" - Core systems
-2. Task: "Gameplay Engineer: [task]" - Player mechanics
-3. Task: "UI Engineer: [task]" - Interface
-```
-
 #### Role Definitions
-| Role | Responsibilities |
-|------|-----------------|
-| **Orchestrator (main)** | Coordinates, creates tasks, reviews, commits |
-| **PM Subagent** | Writes specs, GDD, requirements |
-| **Tech Lead Subagent** | Code review, architecture decisions |
-| **Engineer Subagents** | Implementation (run in parallel) |
-| **QA Subagent** | Testing, bug finding |
+| Role | Subagent Type | Responsibilities |
+|------|--------------|-----------------|
+| **Orchestrator (main)** | - | Coordinates, creates tasks, reviews, commits |
+| **PM** | general-purpose | Writes specs, GDD, requirements |
+| **Tech Lead** | Plan | Architecture decisions, code review |
+| **SWE/Engineers** | general-purpose | Implementation (run in parallel) |
+| **QA** | general-purpose | Testing, bug finding, validation |
+
+#### Launching Parallel Engineers
+```gdscript
+# Example - launch 3 engineers in parallel using Task tool:
+# Send all 3 in the SAME message to run them in parallel
+
+Task 1: "Engine Engineer: Implement dungeon generation system"
+Task 2: "Gameplay Engineer: Add player movement and interaction"
+Task 3: "UI Engineer: Create main menu and HUD"
+
+# Set subagent_type: "general-purpose" and run_in_background: true
+```
 
 #### Workflow Pipeline
 ```
-1. Create tasks with TaskCreate
-2. Set dependencies with TaskUpdate (addBlockedBy)
-3. Launch subagents in parallel with Task tool
-4. Wait for completion with TaskOutput
-5. Review results and commit
-6. Repeat
+1. PM writes spec → creates tasks
+2. Tech Lead reviews architecture
+3. Engineers implement in parallel (background tasks)
+4. QA validates and finds bugs
+5. Orchestrator reviews and commits
+6. Repeat for next phase
 ```
+
+#### Example: Bug Fix with QA Subagent
+```
+1. User reports bug
+2. Launch QA agent: "Find all null reference errors in src/"
+3. QA returns list of issues with file:line
+4. Fix each issue
+5. Commit with descriptive message
+```
+
+#### When to Use Subagents
+- **Large features**: Split into parallel engineer tasks
+- **Bug hunting**: Use QA agent to audit code
+- **Architecture**: Use Plan/Tech Lead agent
+- **Research**: Use Explore agent for codebase questions
+- **Simple fixes**: Do directly (no subagent needed)
 
 ### Git Commit Strategy
 
@@ -93,32 +111,26 @@ After each phase:
 
 ## Current State
 
-### Git History
-```
-04e6a10 - Add 3D Game scene and interference/sabotage system
-f67b4ca - Add 3D first-person player and room system
-75a28ed - Add 3D physics layers and input actions for first-person
-81eb567 - Add opponent tracker UI and update resume documentation
-dfa184b - Fix missing activate() function in base Room class
-94cf555 - Add combat system, weapons, items, and arena room
-455fba7 - Fix critical bugs found in code review
-6c91872 - Add dungeon generation, room navigation, and pattern puzzle
-e7aff07 - Initial project setup with core systems and MVP features
-```
-
 ### Completed Phases
 - [x] Phase 1: Project setup, autoloads, player, sliding puzzle, UI
 - [x] Phase 2: Dungeon generation, rooms, pattern puzzle
 - [x] Phase 3: Combat, weapons, items, arena
+- [x] Phase 4: 3D first-person conversion, interference, tracking
+- [x] E2E Testing framework created
 
 ### In Progress
-- [ ] 3D first-person conversion
-- [ ] Opponent progress tracking UI
-- [ ] Interference/sabotage mechanics
+- [ ] Full runtime testing and validation
+- [ ] Steam multiplayer integration (docs ready)
 
 ### Pending
-- [ ] Phase 4: Shop/economy system
-- [ ] Phase 5: Polish, more puzzles, balance
+- [ ] Phase 5: Shop/economy system
+- [ ] Phase 6: Polish, more puzzles, balance
+
+### Recent Bug Fixes
+- Fixed "Cannot call method on null value" errors across all UI components
+- Added null checks for GameManager, NetworkManager, AudioManager
+- Fixed OpponentTracker path to entries_container
+- Created comprehensive runtime tests
 
 ## Key Files
 
