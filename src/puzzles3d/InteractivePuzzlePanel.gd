@@ -14,6 +14,7 @@ signal puzzle_started()
 var is_active: bool = false
 var is_solved: bool = false
 var start_time: float = 0.0
+var input_cooldown: bool = false  # Prevent rapid E presses
 
 # Simple puzzle: press E when the center button is green
 var presses_needed: int = 3
@@ -162,11 +163,13 @@ func start_puzzle() -> void:
 
 
 func _start_button_cycle() -> void:
-	status_label.text = "Press E when GREEN!"
+	status_label.text = "Get ready..."
 	_update_progress()
+	_set_button_color(COLOR_BUTTON_OFF)
 
-	# Light up the button after a short delay
-	await get_tree().create_timer(0.5).timeout
+	# Random delay before lighting up (0.3 to 1.0 seconds)
+	var delay = randf_range(0.3, 1.0)
+	await get_tree().create_timer(delay).timeout
 	if is_active and not is_solved:
 		_light_button()
 
@@ -179,29 +182,31 @@ func _light_button() -> void:
 	_set_button_color(COLOR_BUTTON_READY)
 	status_label.text = "NOW! Press E!"
 
-	# Give player time to react, then turn off
-	await get_tree().create_timer(1.5).timeout
+	# Give player 2.5 seconds to react
+	await get_tree().create_timer(2.5).timeout
 
 	if waiting_for_input and is_active and not is_solved:
-		# Player missed it
+		# Player missed it - don't punish, just try again
 		waiting_for_input = false
-		_set_button_color(COLOR_BUTTON_FAIL)
-		status_label.text = "Missed! Try again..."
+		status_label.text = "Try again..."
 
-		await get_tree().create_timer(0.8).timeout
+		await get_tree().create_timer(0.5).timeout
 		if is_active and not is_solved:
-			_set_button_color(COLOR_BUTTON_OFF)
 			_start_button_cycle()
 
 
 func interact(player: Node3D) -> void:
-	print("[InteractivePuzzlePanel] interact() called, is_active=%s, is_solved=%s, waiting=%s" % [is_active, is_solved, waiting_for_input])
+	# Ignore input during cooldown
+	if input_cooldown:
+		return
 
 	if is_solved:
 		return
 
 	if not is_active:
 		start_puzzle()
+		# Add cooldown so the same E press doesn't count as puzzle input
+		_start_cooldown(0.8)
 		return
 
 	if waiting_for_input:
@@ -215,6 +220,8 @@ func interact(player: Node3D) -> void:
 
 		print("[InteractivePuzzlePanel] Correct press! %d/%d" % [presses_done, presses_needed])
 
+		_start_cooldown(0.3)
+
 		if presses_done >= presses_needed:
 			_on_puzzle_complete()
 		else:
@@ -222,14 +229,13 @@ func interact(player: Node3D) -> void:
 			if is_active and not is_solved:
 				_set_button_color(COLOR_BUTTON_OFF)
 				_start_button_cycle()
-	else:
-		# Player pressed too early or button wasn't lit
-		_set_button_color(COLOR_BUTTON_FAIL)
-		status_label.text = "Wait for GREEN!"
+	# If button is not lit, just ignore the press (don't punish)
 
-		await get_tree().create_timer(0.5).timeout
-		if is_active and not is_solved:
-			_set_button_color(COLOR_BUTTON_OFF)
+
+func _start_cooldown(duration: float) -> void:
+	input_cooldown = true
+	await get_tree().create_timer(duration).timeout
+	input_cooldown = false
 
 
 func _update_progress() -> void:
