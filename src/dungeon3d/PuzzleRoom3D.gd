@@ -37,48 +37,43 @@ func _ready() -> void:
 
 ## Override puzzle spawning for 3D puzzles
 func _spawn_puzzle() -> void:
+	# Don't spawn if puzzle_type isn't set yet (will be called again from initialize_from_data)
 	if puzzle_type.is_empty():
-		push_warning("[PuzzleRoom3D %d] No puzzle type specified" % room_index)
+		print("[PuzzleRoom3D %d] Waiting for puzzle_type to be set..." % room_index)
 		return
 
-	# Try to load 3D version first
-	var puzzle_scene_path = PUZZLE_SCENES_3D.get(puzzle_type, "")
-	var is_3d_puzzle = true
+	# Don't spawn twice
+	if current_puzzle != null:
+		print("[PuzzleRoom3D %d] Puzzle already spawned" % room_index)
+		return
 
-	# Check if 3D scene exists
-	if puzzle_scene_path.is_empty() or not ResourceLoader.exists(puzzle_scene_path):
-		# Fall back to 2D puzzle
-		puzzle_scene_path = PUZZLE_SCENES_2D_FALLBACK.get(puzzle_type, "")
-		is_3d_puzzle = false
+	print("[PuzzleRoom3D %d] Spawning puzzle type: %s" % [room_index, puzzle_type])
 
-		if puzzle_scene_path.is_empty() or not ResourceLoader.exists(puzzle_scene_path):
-			push_warning("[PuzzleRoom3D %d] No puzzle scene found for: %s" % [room_index, puzzle_type])
-			# Unlock the door if no puzzle can be spawned
-			set_door_locked("right", false)
-			return
+	# Always use the default 3D puzzle panel
+	var puzzle_scene_path = DEFAULT_3D_PUZZLE
+
+	# Check if the scene exists
+	if not ResourceLoader.exists(puzzle_scene_path):
+		push_error("[PuzzleRoom3D %d] Puzzle scene not found: %s" % [room_index, puzzle_scene_path])
+		set_door_locked("right", false)
+		return
 
 	var puzzle_scene = load(puzzle_scene_path)
 	if not puzzle_scene:
-		push_warning("[PuzzleRoom3D %d] Failed to load puzzle scene: %s" % [room_index, puzzle_scene_path])
+		push_error("[PuzzleRoom3D %d] Failed to load puzzle scene: %s" % [room_index, puzzle_scene_path])
 		set_door_locked("right", false)
 		return
 
 	current_puzzle = puzzle_scene.instantiate()
 	if not current_puzzle:
-		push_warning("[PuzzleRoom3D %d] Failed to instantiate puzzle" % room_index)
+		push_error("[PuzzleRoom3D %d] Failed to instantiate puzzle" % room_index)
 		set_door_locked("right", false)
 		return
 
-	# Position puzzle at spawn point
-	if puzzle_spawn:
-		if is_3d_puzzle:
-			current_puzzle.position = puzzle_spawn.position
-		else:
-			# For 2D puzzles, we'd need a SubViewport setup
-			# For now, position it in the center
-			current_puzzle.position = puzzle_spawn.position
-	else:
-		current_puzzle.position = Vector3(0, 1, 0)  # Center of room, slightly elevated
+	# Position puzzle in the center of the room, facing the player spawn
+	# Player spawns at (-3, 1, 0), so puzzle should be at center facing that direction
+	current_puzzle.position = Vector3(0, 1.5, 0)  # Center of room, at eye level
+	current_puzzle.rotation.y = deg_to_rad(180)  # Face toward the left side where player spawns
 
 	# Initialize puzzle with room seed
 	var puzzle_seed_value = room_seed
@@ -86,19 +81,22 @@ func _spawn_puzzle() -> void:
 		puzzle_seed_value = GameManager.get_match_seed() + room_seed
 
 	add_child(current_puzzle)
+	print("[PuzzleRoom3D %d] Puzzle added to scene tree" % room_index)
 
 	# Initialize puzzle if it has the method
 	if current_puzzle.has_method("initialize"):
 		current_puzzle.initialize(puzzle_seed_value, difficulty)
+		print("[PuzzleRoom3D %d] Puzzle initialized with seed %d, difficulty %d" % [room_index, puzzle_seed_value, difficulty])
 
 	# Connect puzzle signals
 	if current_puzzle.has_signal("puzzle_solved"):
 		current_puzzle.puzzle_solved.connect(_on_puzzle_solved)
+		print("[PuzzleRoom3D %d] Connected puzzle_solved signal" % room_index)
 	if current_puzzle.has_signal("puzzle_failed"):
 		current_puzzle.puzzle_failed.connect(_on_puzzle_failed)
 
 	puzzle_spawned.emit(current_puzzle)
-	print("[PuzzleRoom3D %d] Spawned puzzle: %s (3D: %s)" % [room_index, puzzle_type, is_3d_puzzle])
+	print("[PuzzleRoom3D %d] Spawned puzzle: %s at position %s" % [room_index, puzzle_type, current_puzzle.position])
 
 
 ## Override activate to start puzzle

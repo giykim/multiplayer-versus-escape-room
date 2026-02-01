@@ -38,6 +38,7 @@ const BUTTON_SPACING: float = 0.4
 
 
 func _ready() -> void:
+	print("[InteractivePuzzlePanel] _ready called, creating puzzle at position: %s" % global_position)
 	_create_panel()
 	_create_buttons()
 	_create_status_label()
@@ -48,6 +49,7 @@ func _ready() -> void:
 
 	add_to_group("interactable")
 	add_to_group("puzzle")
+	print("[InteractivePuzzlePanel] Puzzle panel ready - press E to interact")
 
 
 func _create_panel() -> void:
@@ -62,9 +64,14 @@ func _create_panel() -> void:
 	material.albedo_color = panel_color
 	material.metallic = 0.3
 	material.roughness = 0.7
+	# Add emission so the panel glows and is easily visible
+	material.emission_enabled = true
+	material.emission = panel_color * 0.5
+	material.emission_energy_multiplier = 0.8
 	panel_mesh.material_override = material
 
 	add_child(panel_mesh)
+	print("[InteractivePuzzlePanel] Panel mesh created")
 
 
 func _create_buttons() -> void:
@@ -118,10 +125,14 @@ func _create_status_label() -> void:
 	status_label = Label3D.new()
 	status_label.name = "StatusLabel"
 	status_label.text = "Press E to Start"
-	status_label.font_size = 32
-	status_label.position = Vector3(0, 0.55, 0.06)
+	status_label.font_size = 48
+	status_label.pixel_size = 0.01
+	status_label.position = Vector3(0, 0.6, 0.08)
 	status_label.modulate = Color.WHITE
+	status_label.outline_modulate = Color.BLACK
+	status_label.outline_size = 8
 	add_child(status_label)
+	print("[InteractivePuzzlePanel] Status label created")
 
 
 func _create_interaction_area() -> void:
