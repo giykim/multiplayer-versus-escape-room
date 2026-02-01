@@ -13,12 +13,13 @@ const PUZZLE_SCENES_3D: Dictionary = {
 }
 
 # Fallback to 2D puzzles rendered on a viewport (if 3D version doesn't exist)
+# Note: Maps puzzle_type names from DungeonGenerator to actual scene files
 const PUZZLE_SCENES_2D_FALLBACK: Dictionary = {
 	"sliding_tile": "res://src/puzzles/logic/SlidingTilePuzzle.tscn",
-	"pattern_match": "res://src/puzzles/logic/PatternMatchPuzzle.tscn",
+	"pattern_match": "res://src/puzzles/logic/PatternSequencePuzzle.tscn",  # Use PatternSequence for pattern_match
 	"wire_connect": "res://src/puzzles/logic/WireConnectPuzzle.tscn",
-	"sequence_memory": "res://src/puzzles/logic/SequenceMemoryPuzzle.tscn",
-	"lock_pick": "res://src/puzzles/logic/LockPickPuzzle.tscn"
+	"sequence_memory": "res://src/puzzles/logic/PatternSequencePuzzle.tscn",  # Use PatternSequence as fallback
+	"lock_pick": "res://src/puzzles/logic/SlidingTilePuzzle.tscn"  # Use SlidingTile as fallback
 }
 
 # Puzzle state
