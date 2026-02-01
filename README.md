@@ -1,6 +1,7 @@
 # Multiplayer Versus Escape Room
 
-A competitive multiplayer roguelike puzzle game built with Godot 4 and GDScript.
+A competitive multiplayer roguelike puzzle game built with Godot 4.6 and GDScript.
+Features both 2D (top-down) and 3D (first-person) modes.
 
 ## Game Concept
 
@@ -8,17 +9,27 @@ A competitive multiplayer roguelike puzzle game built with Godot 4 and GDScript.
 - **Information asymmetry**: Learn map layout and secrets
 - **Resource economy**: Earn more coins for upgrades
 - **Positioning**: Better spawn positions in the final arena
+- **Interference**: Place traps to slow down opponents
 
 ## Quick Start
 
 ### Requirements
-- Godot 4.2+ (download from https://godotengine.org/)
+- Godot 4.6+ (download from https://godotengine.org/)
 
 ### Running the Game
 ```bash
 cd "C:\Users\juyou\Documents\Programming Projects\multiplayer-versus-escape-room"
 godot --editor .
 # Then press F5 to run
+```
+
+### Running Tests
+```bash
+# Run E2E tests (headless)
+run_tests.bat
+
+# Or manually:
+godot --headless --script tests/TestRunner.gd
 ```
 
 ### Testing Multiplayer Locally
@@ -31,29 +42,33 @@ godot --editor .
 ```
 src/
 ├── autoload/           # Singletons (GameManager, NetworkManager, AudioManager)
-├── player/             # Player movement, input, character
-├── puzzles/            # Puzzle system
+├── player/             # 2D Player movement, input, character
+├── player3d/           # 3D First-person controller
+├── puzzles/            # 2D Puzzle system
 │   ├── base/           # BasePuzzle, PuzzleTile
 │   └── logic/          # SlidingTile, PatternSequence puzzles
-├── dungeon/            # Procedural generation
-│   ├── DungeonGenerator.gd
-│   ├── Dungeon.gd
-│   ├── Room.gd
+├── puzzles3d/          # 3D Puzzle system with raycast interaction
+├── dungeon/            # 2D Procedural generation
 │   └── RoomTypes/      # PuzzleRoom, TreasureRoom, ArenaRoom
+├── dungeon3d/          # 3D Dungeon generation
 ├── combat/             # Combat system
 │   ├── CombatSystem.gd
 │   ├── Weapon.gd
 │   └── Weapons/        # Sword, Bow
 ├── items/              # Pickups and loot
-│   ├── Item.gd
-│   ├── CoinPickup.gd
-│   ├── WeaponPickup.gd
-│   └── HealthPickup.gd
-├── ui/                 # Menus and HUD
-│   ├── MainMenu
-│   ├── Lobby
-│   └── HUD
-└── Game.gd             # Main game scene
+├── interference/       # Traps and sabotage system
+├── ui/                 # Menus, HUD, OpponentTracker
+├── Game.gd             # 2D Main game scene
+└── Game3D.gd           # 3D Main game scene
+tests/
+├── TestRunner.gd       # E2E test framework
+├── BaseTest.gd         # Test utilities
+├── unit/               # Unit tests
+└── integration/        # Integration tests
+docs/
+├── game_design_document.md
+├── STEAM_MULTIPLAYER.md  # Steam integration guide
+└── CLAUDE_RESUME.md      # Resume development guide
 ```
 
 ## Current Features
@@ -61,11 +76,14 @@ src/
 ### Core Systems
 - [x] Multiplayer networking (host/join lobby)
 - [x] Procedural dungeon generation (seed-based)
-- [x] Player movement with interaction system
+- [x] 2D top-down player controller
+- [x] 3D first-person player controller
 - [x] Puzzle framework with multiple types
 - [x] Combat system with weapons
 - [x] Item/loot system
 - [x] Arena final showdown
+- [x] Opponent tracking UI
+- [x] Interference/trap system
 
 ### Puzzle Types
 - [x] Sliding Tile Puzzle
@@ -80,26 +98,35 @@ src/
 - [x] Health pickups
 - [x] Weapon pickups
 
+### Traps (Interference)
+- [x] Slow trap
+- [x] Stun trap
+- [x] Blind trap
+- [x] Reverse controls trap
+- [x] Damage trap
+
 ## Development Status
 
 | Phase | Status | Description |
 |-------|--------|-------------|
-| 1 | ✅ Complete | Project setup, core systems, MVP |
-| 2 | ✅ Complete | Dungeon generation, rooms, navigation |
-| 3 | ✅ Complete | Combat, weapons, items, arena |
-| 4 | 🔲 Pending | Shop system, economy |
-| 5 | 🔲 Pending | Polish, more puzzles, balance |
-
-## Resuming Development
-
-To continue development with Claude Code:
-```
-Open this project folder and say:
-"Continue developing the multiplayer puzzle game. Read the README.md and docs/game_design_document.md for context. Current status: Phase 3 complete, ready for Phase 4 (Shop/Economy)."
-```
+| 1 | Complete | Project setup, core systems, MVP |
+| 2 | Complete | Dungeon generation, rooms, navigation |
+| 3 | Complete | Combat, weapons, items, arena |
+| 4 | Complete | 3D conversion, interference, tracking |
+| 5 | Pending | Shop system, economy |
+| 6 | Pending | Steam multiplayer, polish |
 
 ## Controls
 
+### 3D First-Person (Default)
+| Action | Key |
+|--------|-----|
+| Move | WASD |
+| Look | Mouse |
+| Interact | E / Left Click |
+| Sprint | Shift |
+
+### 2D Top-Down
 | Action | Key |
 |--------|-----|
 | Move | WASD / Arrow Keys |
@@ -107,12 +134,44 @@ Open this project folder and say:
 | Attack | Left Click |
 | Charge (Bow) | Hold Left Click |
 
+## Resuming Development
+
+See `docs/CLAUDE_RESUME.md` for detailed instructions on resuming with Claude Code.
+
+Quick start:
+```
+Open this project folder and say:
+"Continue developing the multiplayer puzzle game. Read CLAUDE_RESUME.md for context."
+```
+
+## Steam Multiplayer
+
+See `docs/STEAM_MULTIPLAYER.md` for Steam networking integration guide.
+
 ## Technical Notes
 
-- **Engine**: Godot 4.2+
+- **Engine**: Godot 4.6
 - **Language**: GDScript
-- **Networking**: ENet (client-server model)
-- **Resolution**: 1280x720 (scalable)
+- **Networking**: ENet (client-server), Steam ready
+- **3D Mode**: First-person with CSG prototyping
+- **2D Mode**: Top-down with tile-based rooms
+
+## Testing
+
+The project includes an E2E testing framework:
+
+```bash
+# Run all tests
+run_tests.bat
+
+# Tests validate:
+# - Player systems (2D and 3D)
+# - Combat mechanics
+# - Puzzle logic
+# - Dungeon generation
+# - Item pickups
+# - Game flow integration
+```
 
 ## License
 
