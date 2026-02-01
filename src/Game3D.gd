@@ -55,6 +55,10 @@ func _setup_match() -> void:
 	hud = HUD_SCENE.instantiate()
 	add_child(hud)
 
+	# Connect HUD to dungeon for room tracking
+	if hud and dungeon and hud.has_method("connect_to_dungeon"):
+		hud.connect_to_dungeon(dungeon)
+
 	# Create opponent tracker
 	var tracker_scene = load("res://src/ui/OpponentTracker.tscn")
 	if tracker_scene:
@@ -100,11 +104,17 @@ func _spawn_player(player_id: int) -> void:
 	if player.has_method("set_player_id"):
 		player.set_player_id(player_id)
 
-	# Get spawn position from dungeon
+	# Add to scene tree FIRST (required before setting global_position)
+	if player_container:
+		player_container.add_child(player)
+	else:
+		add_child(player)
+	players[player_id] = player
+
+	# Now set spawn position (must be after adding to tree)
 	var spawn_pos = Vector3.ZERO
 	if dungeon and dungeon.has_method("get_player_spawn_position"):
 		spawn_pos = dungeon.get_player_spawn_position()
-
 	player.global_position = spawn_pos
 
 	# Track local player
@@ -133,12 +143,6 @@ func _spawn_player(player_id: int) -> void:
 	# Connect signals
 	if player.has_signal("interaction_triggered"):
 		player.interaction_triggered.connect(_on_player_interaction)
-
-	if player_container:
-		player_container.add_child(player)
-	else:
-		add_child(player)  # Fallback to scene root
-	players[player_id] = player
 
 	print("[Game3D] Spawned player %d (local: %s)" % [player_id, is_local])
 

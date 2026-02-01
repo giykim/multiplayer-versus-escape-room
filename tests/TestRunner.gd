@@ -36,12 +36,20 @@ func _ready() -> void:
 func _discover_tests() -> void:
 	# Register test classes (add new test files here)
 	var test_paths = [
+		# Unit tests
 		"res://tests/unit/TestPlayer.gd",
 		"res://tests/unit/TestCombatSystem.gd",
 		"res://tests/unit/TestPuzzles.gd",
 		"res://tests/unit/TestDungeon.gd",
 		"res://tests/unit/TestItems.gd",
+		"res://tests/unit/TestRoom3D.gd",
+		"res://tests/unit/TestDungeon3D.gd",
+		"res://tests/unit/TestColorPuzzle.gd",
+		"res://tests/unit/TestHUD.gd",
+		"res://tests/unit/TestTreasureRoom.gd",
+		# Integration tests
 		"res://tests/integration/TestGameFlow.gd",
+		"res://tests/integration/TestDoorTransitions.gd",
 	]
 
 	for path in test_paths:

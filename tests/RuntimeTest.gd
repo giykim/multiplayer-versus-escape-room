@@ -33,11 +33,19 @@ func _run_all_tests() -> void:
 	await test_main_menu_loads()
 	await test_lobby_loads()
 	await test_hud_loads()
+	await test_hud_has_room_progress()
 	await test_game3d_loads()
 	await test_player3d_loads()
 	await test_combat_system_instantiates()
 	await test_dungeon_generator_works()
 	await test_puzzle_instantiates()
+	await test_room3d_instantiates()
+	await test_room3d_has_doors()
+	await test_room3d_door_labels()
+	await test_dungeon3d_generates()
+	await test_dungeon3d_transitions()
+	await test_color_puzzle_instantiates()
+	await test_treasure_room_instantiates()
 
 
 func _add_result(name: String, passed: bool, message: String) -> void:
@@ -256,6 +264,194 @@ func test_puzzle_instantiates() -> void:
 	await get_tree().process_frame
 
 	_add_result("BasePuzzle", has_complete_signal, "Has completion signal" if has_complete_signal else "Missing puzzle_completed signal")
+
+
+func test_hud_has_room_progress() -> void:
+	var scene_path = "res://src/ui/HUD.tscn"
+	if not ResourceLoader.exists(scene_path):
+		_add_result("HUD RoomProgress", false, "Scene file not found")
+		return
+
+	var scene = load(scene_path)
+	var instance = scene.instantiate()
+
+	scene_root.add_child(instance)
+	await get_tree().process_frame
+
+	var room_progress = instance.get_node_or_null("MarginContainer/TopBar/TimerContainer/RoomProgress")
+	var has_method = instance.has_method("_update_room_progress")
+
+	instance.queue_free()
+	await get_tree().process_frame
+
+	_add_result("HUD RoomProgress", room_progress != null and has_method, "Has room progress display" if room_progress else "Missing RoomProgress label")
+
+
+func test_room3d_instantiates() -> void:
+	var scene_path = "res://src/dungeon3d/Room3D.tscn"
+	if not ResourceLoader.exists(scene_path):
+		_add_result("Room3D instantiate", false, "Scene file not found")
+		return
+
+	var scene = load(scene_path)
+	var instance = scene.instantiate()
+
+	scene_root.add_child(instance)
+	await get_tree().process_frame
+
+	var is_node3d = instance is Node3D
+	var has_floor = instance.get_node_or_null("Floor") != null
+
+	instance.queue_free()
+	await get_tree().process_frame
+
+	_add_result("Room3D instantiate", is_node3d and has_floor, "Instantiates as Node3D with floor")
+
+
+func test_room3d_has_doors() -> void:
+	var scene_path = "res://src/dungeon3d/Room3D.tscn"
+	if not ResourceLoader.exists(scene_path):
+		_add_result("Room3D doors", false, "Scene file not found")
+		return
+
+	var scene = load(scene_path)
+	var instance = scene.instantiate()
+
+	scene_root.add_child(instance)
+	await get_tree().process_frame
+
+	var left_door = instance.get_node_or_null("LeftDoor")
+	var right_door = instance.get_node_or_null("RightDoor")
+	var left_panel = left_door.get_node_or_null("DoorPanel") if left_door else null
+	var right_panel = right_door.get_node_or_null("DoorPanel") if right_door else null
+
+	instance.queue_free()
+	await get_tree().process_frame
+
+	var passed = left_door != null and right_door != null and left_panel != null and right_panel != null
+	_add_result("Room3D doors", passed, "Has doors with panels" if passed else "Missing door components")
+
+
+func test_room3d_door_labels() -> void:
+	var scene_path = "res://src/dungeon3d/Room3D.tscn"
+	if not ResourceLoader.exists(scene_path):
+		_add_result("Room3D door labels", false, "Scene file not found")
+		return
+
+	var scene = load(scene_path)
+	var instance = scene.instantiate()
+
+	scene_root.add_child(instance)
+	await get_tree().process_frame
+
+	var left_door = instance.get_node_or_null("LeftDoor")
+	var right_door = instance.get_node_or_null("RightDoor")
+	var left_label = left_door.get_node_or_null("DoorLabel") if left_door else null
+	var right_label = right_door.get_node_or_null("DoorLabel") if right_door else null
+	var progress_label = instance.get_node_or_null("RoomProgressLabel")
+
+	instance.queue_free()
+	await get_tree().process_frame
+
+	var passed = left_label != null and right_label != null and progress_label != null
+	_add_result("Room3D door labels", passed, "Has door labels and progress" if passed else "Missing labels")
+
+
+func test_dungeon3d_generates() -> void:
+	var dungeon = Dungeon3D.new()
+
+	scene_root.add_child(dungeon)
+	await get_tree().process_frame
+
+	dungeon.generate_dungeon(12345)
+
+	var has_layout = dungeon.layout != null
+	var has_rooms = dungeon.loaded_rooms.size() > 0
+	var room_count = dungeon.get_room_count()
+
+	dungeon.queue_free()
+	await get_tree().process_frame
+
+	var passed = has_layout and has_rooms and room_count >= 5
+	_add_result("Dungeon3D generates", passed, "Generated %d rooms" % room_count if passed else "Generation failed")
+
+
+func test_dungeon3d_transitions() -> void:
+	var dungeon = Dungeon3D.new()
+
+	scene_root.add_child(dungeon)
+	await get_tree().process_frame
+
+	dungeon.generate_dungeon(12345)
+
+	# Check transition cooldown exists
+	var has_cooldown = "transition_cooldown" in dungeon
+
+	# Unlock door and test transition
+	var room = dungeon.get_current_room()
+	if room:
+		room.doors_locked["right"] = false
+
+	var start_index = dungeon.current_room_index
+	var result = dungeon.transition_to_room(start_index + 1, 1)
+	var new_index = dungeon.current_room_index
+
+	dungeon.queue_free()
+	await get_tree().process_frame
+
+	var passed = has_cooldown and result and new_index == start_index + 1
+	_add_result("Dungeon3D transitions", passed, "Transition works with cooldown" if passed else "Transition failed")
+
+
+func test_color_puzzle_instantiates() -> void:
+	var scene_path = "res://src/puzzles3d/InteractivePuzzlePanel.tscn"
+	if not ResourceLoader.exists(scene_path):
+		_add_result("Color Puzzle", false, "Scene file not found")
+		return
+
+	var scene = load(scene_path)
+	var instance = scene.instantiate()
+
+	scene_root.add_child(instance)
+	await get_tree().process_frame
+
+	var has_buttons = instance.buttons.size() == 4
+	var has_sequence = "sequence" in instance
+	var has_signals = instance.has_signal("puzzle_solved") and instance.has_signal("puzzle_started")
+
+	# Test initialize
+	instance.initialize(12345, 3)
+	var sequence_generated = instance.sequence.size() > 0
+
+	instance.queue_free()
+	await get_tree().process_frame
+
+	var passed = has_buttons and has_sequence and has_signals and sequence_generated
+	_add_result("Color Puzzle", passed, "Has 4 buttons and sequence generation" if passed else "Missing components")
+
+
+func test_treasure_room_instantiates() -> void:
+	var scene_path = "res://src/dungeon3d/TreasureRoom3D.tscn"
+	if not ResourceLoader.exists(scene_path):
+		_add_result("TreasureRoom3D", false, "Scene file not found")
+		return
+
+	var scene = load(scene_path)
+	var instance = scene.instantiate()
+
+	scene_root.add_child(instance)
+	await get_tree().process_frame
+
+	var is_room3d = instance is Room3D
+	var is_treasure_type = instance.room_type == instance.RoomType.TREASURE
+	var door_locked = instance.doors_locked.get("right", false)
+	var has_chest_state = "chest_opened" in instance
+
+	instance.queue_free()
+	await get_tree().process_frame
+
+	var passed = is_room3d and is_treasure_type and door_locked and has_chest_state
+	_add_result("TreasureRoom3D", passed, "Correct type with locked door" if passed else "Configuration issue")
 
 
 func _find_nodes_of_type(root: Node, type_name: String) -> Array[Node]:

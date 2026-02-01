@@ -1,55 +1,69 @@
 extends Node3D
 class_name InteractivePuzzlePanel
-## InteractivePuzzlePanel - Simple 3D puzzle that player can interact with
-## Press E to interact, solve by pressing E when buttons light up
+## InteractivePuzzlePanel - Color memorization puzzle
+## Watch the sequence of colors, then repeat it by pressing E when each color lights up
 
 signal puzzle_solved(puzzle_id: String, time_taken: float)
 signal puzzle_failed(puzzle_id: String)
 signal puzzle_started()
 
 @export var puzzle_id: String = "panel_puzzle"
-@export var difficulty: int = 1  # 1-5, affects number of presses needed
+@export var difficulty: int = 1  # 1-5, affects sequence length
 
 # Puzzle state
 var is_active: bool = false
 var is_solved: bool = false
+var is_showing_sequence: bool = false
 var start_time: float = 0.0
-var input_cooldown: bool = false  # Prevent rapid E presses
+var presses_needed: int = 3  # For test compatibility - equals sequence length
 
-# Simple puzzle: press E when the center button is green
-var presses_needed: int = 3
-var presses_done: int = 0
-var current_button_lit: int = -1
-var waiting_for_input: bool = false
+# Color memorization puzzle
+var sequence: Array[int] = []  # The pattern to memorize (0-3 for each button)
+var player_input: Array[int] = []  # Player's input so far
+var current_show_index: int = 0
+var current_input_index: int = 0
 
 # Node references
 var panel_mesh: MeshInstance3D
-var center_button: MeshInstance3D
+var buttons: Array[MeshInstance3D] = []
+var button_areas: Array[Area3D] = []
 var status_label: Label3D
 var progress_label: Label3D
 var interaction_area: Area3D
 
-# Colors
-const COLOR_PANEL = Color(0.15, 0.2, 0.3)
-const COLOR_BUTTON_OFF = Color(0.3, 0.3, 0.3)
-const COLOR_BUTTON_READY = Color(0.2, 0.8, 0.2)
-const COLOR_BUTTON_SUCCESS = Color(0.3, 1.0, 0.3)
-const COLOR_BUTTON_FAIL = Color(0.8, 0.2, 0.2)
+# Button configuration
+const BUTTON_COUNT: int = 4
+const BUTTON_POSITIONS: Array[Vector3] = [
+	Vector3(-0.5, 0.3, 0.1),   # Top-left
+	Vector3(0.5, 0.3, 0.1),    # Top-right
+	Vector3(-0.5, -0.3, 0.1),  # Bottom-left
+	Vector3(0.5, -0.3, 0.1)    # Bottom-right
+]
+
+# Colors for each button
+const BUTTON_COLORS: Array[Color] = [
+	Color(0.8, 0.2, 0.2),  # Red
+	Color(0.2, 0.6, 0.8),  # Blue
+	Color(0.8, 0.8, 0.2),  # Yellow
+	Color(0.2, 0.8, 0.2)   # Green
+]
+const COLOR_OFF = Color(0.3, 0.3, 0.3)
+const COLOR_SUCCESS = Color(0.3, 1.0, 0.3)
 
 
 func _ready() -> void:
 	_create_panel()
-	_create_button()
+	_create_buttons()
 	_create_labels()
 	_create_interaction_area()
 
-	# Set presses needed based on difficulty
-	presses_needed = 2 + difficulty  # 3-7 based on difficulty 1-5
+	# Set default presses_needed based on difficulty
+	presses_needed = 2 + difficulty
 
 	add_to_group("interactable")
 	add_to_group("puzzle")
 
-	print("[InteractivePuzzlePanel] Ready - need %d successful presses" % presses_needed)
+	print("[InteractivePuzzlePanel] Ready - difficulty %d" % difficulty)
 
 
 func _create_panel() -> void:
@@ -61,50 +75,71 @@ func _create_panel() -> void:
 	panel_mesh.mesh = box
 
 	var material = StandardMaterial3D.new()
-	material.albedo_color = COLOR_PANEL
+	material.albedo_color = Color(0.15, 0.2, 0.3)
 	material.emission_enabled = true
-	material.emission = COLOR_PANEL * 0.3
+	material.emission = Color(0.15, 0.2, 0.3) * 0.3
 	material.emission_energy_multiplier = 0.5
 	panel_mesh.material_override = material
 
 	add_child(panel_mesh)
 
 
-func _create_button() -> void:
-	center_button = MeshInstance3D.new()
-	center_button.name = "CenterButton"
+func _create_buttons() -> void:
+	for i in range(BUTTON_COUNT):
+		# Create button mesh
+		var button = MeshInstance3D.new()
+		button.name = "Button_%d" % i
 
-	var cylinder = CylinderMesh.new()
-	cylinder.top_radius = 0.35
-	cylinder.bottom_radius = 0.35
-	cylinder.height = 0.08
-	center_button.mesh = cylinder
+		var cylinder = CylinderMesh.new()
+		cylinder.top_radius = 0.25
+		cylinder.bottom_radius = 0.25
+		cylinder.height = 0.08
+		button.mesh = cylinder
 
-	# Rotate to face forward
-	center_button.rotation.x = deg_to_rad(90)
-	center_button.position = Vector3(0, 0, 0.1)
+		# Rotate to face forward and position
+		button.rotation.x = deg_to_rad(90)
+		button.position = BUTTON_POSITIONS[i]
 
-	_set_button_color(COLOR_BUTTON_OFF)
+		_set_button_color(button, COLOR_OFF)
+		add_child(button)
+		buttons.append(button)
 
-	add_child(center_button)
+		# Create clickable area for each button
+		var area = Area3D.new()
+		area.name = "ButtonArea_%d" % i
+		area.collision_layer = 32  # Layer 6 = Interactables
+		area.collision_mask = 0
+		area.set_meta("puzzle_parent", self)
+		area.set_meta("button_index", i)
+		area.add_to_group("interactable")
+
+		var shape = CollisionShape3D.new()
+		var box_shape = BoxShape3D.new()
+		box_shape.size = Vector3(0.5, 0.5, 0.3)
+		shape.shape = box_shape
+		shape.position = BUTTON_POSITIONS[i]
+
+		area.add_child(shape)
+		add_child(area)
+		button_areas.append(area)
 
 
-func _set_button_color(color: Color) -> void:
+func _set_button_color(button: MeshInstance3D, color: Color) -> void:
 	var mat = StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.emission_enabled = true
 	mat.emission = color
-	mat.emission_energy_multiplier = 1.5
-	center_button.material_override = mat
+	mat.emission_energy_multiplier = 1.5 if color != COLOR_OFF else 0.3
+	button.material_override = mat
 
 
 func _create_labels() -> void:
 	status_label = Label3D.new()
 	status_label.name = "StatusLabel"
 	status_label.text = "Press E to Start"
-	status_label.font_size = 64
+	status_label.font_size = 48
 	status_label.pixel_size = 0.008
-	status_label.position = Vector3(0, 0.55, 0.12)
+	status_label.position = Vector3(0, 0.65, 0.12)
 	status_label.modulate = Color.WHITE
 	status_label.outline_size = 12
 	status_label.outline_modulate = Color.BLACK
@@ -113,9 +148,9 @@ func _create_labels() -> void:
 	progress_label = Label3D.new()
 	progress_label.name = "ProgressLabel"
 	progress_label.text = ""
-	progress_label.font_size = 48
+	progress_label.font_size = 36
 	progress_label.pixel_size = 0.008
-	progress_label.position = Vector3(0, -0.5, 0.12)
+	progress_label.position = Vector3(0, -0.6, 0.12)
 	progress_label.modulate = Color.WHITE
 	progress_label.outline_size = 8
 	progress_label.outline_modulate = Color.BLACK
@@ -142,9 +177,22 @@ func _create_interaction_area() -> void:
 
 func initialize(seed_value: int, puzzle_difficulty: int) -> void:
 	difficulty = puzzle_difficulty
-	presses_needed = 2 + difficulty
+	_generate_sequence(seed_value)
+	presses_needed = sequence.size()  # For test compatibility
 	_update_progress()
-	print("[InteractivePuzzlePanel] Initialized: difficulty=%d, presses_needed=%d" % [difficulty, presses_needed])
+	print("[InteractivePuzzlePanel] Initialized: difficulty=%d, sequence length=%d" % [difficulty, sequence.size()])
+
+
+func _generate_sequence(seed_value: int) -> void:
+	var rng = RandomNumberGenerator.new()
+	rng.seed = seed_value + puzzle_id.hash()
+
+	# Sequence length based on difficulty (3-7)
+	var length = 2 + difficulty
+	sequence.clear()
+
+	for i in range(length):
+		sequence.append(rng.randi_range(0, BUTTON_COUNT - 1))
 
 
 func start_puzzle() -> void:
@@ -153,105 +201,161 @@ func start_puzzle() -> void:
 
 	is_active = true
 	start_time = Time.get_ticks_msec() / 1000.0
-	presses_done = 0
+	player_input.clear()
+	current_input_index = 0
 
 	puzzle_started.emit()
-	print("[InteractivePuzzlePanel] Puzzle started!")
+	print("[InteractivePuzzlePanel] Puzzle started! Sequence: %s" % str(sequence))
 
-	# Start the button lighting cycle
-	_start_button_cycle()
+	# Show the sequence to memorize
+	_show_sequence()
 
 
-func _start_button_cycle() -> void:
-	status_label.text = "Get ready..."
+func _show_sequence() -> void:
+	is_showing_sequence = true
+	status_label.text = "Watch..."
 	_update_progress()
-	_set_button_color(COLOR_BUTTON_OFF)
 
-	# Random delay before lighting up (0.3 to 1.0 seconds)
-	var delay = randf_range(0.3, 1.0)
-	await get_tree().create_timer(delay).timeout
-	if is_active and not is_solved:
-		_light_button()
+	# Reset all buttons
+	for button in buttons:
+		_set_button_color(button, COLOR_OFF)
+
+	current_show_index = 0
+	_show_next_in_sequence()
 
 
-func _light_button() -> void:
-	if not is_active or is_solved:
+func _show_next_in_sequence() -> void:
+	if current_show_index >= sequence.size():
+		# Done showing sequence
+		is_showing_sequence = false
+		status_label.text = "Your turn!"
+		_update_progress()
 		return
 
-	waiting_for_input = true
-	_set_button_color(COLOR_BUTTON_READY)
-	status_label.text = "NOW! Press E!"
+	# Light up the current button
+	var button_index = sequence[current_show_index]
+	_set_button_color(buttons[button_index], BUTTON_COLORS[button_index])
 
-	# Give player 2.5 seconds to react
-	await get_tree().create_timer(2.5).timeout
+	# Wait, then turn off and show next
+	await get_tree().create_timer(0.6).timeout
 
-	if waiting_for_input and is_active and not is_solved:
-		# Player missed it - don't punish, just try again
-		waiting_for_input = false
-		status_label.text = "Try again..."
+	if is_active and not is_solved:
+		_set_button_color(buttons[button_index], COLOR_OFF)
 
-		await get_tree().create_timer(0.5).timeout
+		await get_tree().create_timer(0.3).timeout
+
 		if is_active and not is_solved:
-			_start_button_cycle()
+			current_show_index += 1
+			_show_next_in_sequence()
 
 
 func interact(player: Node3D) -> void:
-	# Ignore input during cooldown
-	if input_cooldown:
-		return
-
 	if is_solved:
 		return
 
 	if not is_active:
 		start_puzzle()
-		# Add cooldown so the same E press doesn't count as puzzle input
-		_start_cooldown(0.8)
 		return
 
-	if waiting_for_input:
-		# Player pressed at the right time!
-		waiting_for_input = false
-		presses_done += 1
+	if is_showing_sequence:
+		# Can't input while sequence is showing
+		return
+
+	# Find which button was pressed based on raycast
+	var button_index = _get_aimed_button(player)
+	if button_index < 0:
+		return
+
+	_on_button_pressed(button_index)
+
+
+func _get_aimed_button(player: Node3D) -> int:
+	# Check if player has a raycast we can use
+	var ray = player.get_node_or_null("Head/InteractionRay")
+	if ray and ray is RayCast3D and ray.is_colliding():
+		var collider = ray.get_collider()
+		if collider and collider.has_meta("button_index"):
+			return collider.get_meta("button_index")
+
+	# Fallback: find closest button to aim direction
+	var camera = player.get_node_or_null("Head/Camera3D")
+	if not camera:
+		return -1
+
+	var from = camera.global_position
+	var dir = -camera.global_transform.basis.z
+
+	var best_index = -1
+	var best_dot = 0.5  # Minimum threshold
+
+	for i in range(BUTTON_COUNT):
+		var button_pos = buttons[i].global_position
+		var to_button = (button_pos - from).normalized()
+		var dot = dir.dot(to_button)
+
+		if dot > best_dot:
+			best_dot = dot
+			best_index = i
+
+	return best_index
+
+
+func _on_button_pressed(button_index: int) -> void:
+	# Flash the button
+	_set_button_color(buttons[button_index], BUTTON_COLORS[button_index])
+
+	# Check if correct
+	if button_index == sequence[current_input_index]:
+		# Correct!
+		player_input.append(button_index)
+		current_input_index += 1
 		_update_progress()
 
-		_set_button_color(COLOR_BUTTON_SUCCESS)
-		status_label.text = "Good!"
+		print("[InteractivePuzzlePanel] Correct! %d/%d" % [current_input_index, sequence.size()])
 
-		print("[InteractivePuzzlePanel] Correct press! %d/%d" % [presses_done, presses_needed])
-
-		_start_cooldown(0.3)
-
-		if presses_done >= presses_needed:
+		if current_input_index >= sequence.size():
+			# Puzzle complete!
 			_on_puzzle_complete()
 		else:
-			await get_tree().create_timer(0.5).timeout
+			# Turn off button after short delay
+			await get_tree().create_timer(0.3).timeout
 			if is_active and not is_solved:
-				_set_button_color(COLOR_BUTTON_OFF)
-				_start_button_cycle()
-	# If button is not lit, just ignore the press (don't punish)
+				_set_button_color(buttons[button_index], COLOR_OFF)
+	else:
+		# Wrong! Show error and restart sequence
+		print("[InteractivePuzzlePanel] Wrong! Expected %d, got %d" % [sequence[current_input_index], button_index])
+		status_label.text = "Wrong! Watch again..."
+		_set_button_color(buttons[button_index], Color(0.8, 0.2, 0.2))
 
+		await get_tree().create_timer(1.0).timeout
 
-func _start_cooldown(duration: float) -> void:
-	input_cooldown = true
-	await get_tree().create_timer(duration).timeout
-	input_cooldown = false
+		if is_active and not is_solved:
+			player_input.clear()
+			current_input_index = 0
+			_show_sequence()
 
 
 func _update_progress() -> void:
-	progress_label.text = "%d / %d" % [presses_done, presses_needed]
+	if progress_label:
+		if is_showing_sequence:
+			progress_label.text = "Memorize: %d colors" % sequence.size()
+		else:
+			progress_label.text = "Input: %d / %d" % [current_input_index, sequence.size()]
 
 
 func _on_puzzle_complete() -> void:
 	is_solved = true
 	is_active = false
-	waiting_for_input = false
+	is_showing_sequence = false
 
 	var time_taken = (Time.get_ticks_msec() / 1000.0) - start_time
 
-	_set_button_color(COLOR_BUTTON_SUCCESS)
+	# Light up all buttons green
+	for button in buttons:
+		_set_button_color(button, COLOR_SUCCESS)
+
 	status_label.text = "SOLVED!"
-	status_label.modulate = COLOR_BUTTON_SUCCESS
+	status_label.modulate = COLOR_SUCCESS
 
 	print("[InteractivePuzzlePanel] Puzzle solved in %.2fs!" % time_taken)
 	puzzle_solved.emit(puzzle_id, time_taken)
