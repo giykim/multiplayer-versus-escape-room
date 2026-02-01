@@ -21,7 +21,6 @@ size = Vector3(0.5, 2.5, 1.5)
 script = ExtResource("1_room3d")
 room_type = 4
 
-# === FLOOR - Larger arena ===
 [node name="Floor" type="CSGBox3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.15, 0)
 use_collision = true
@@ -29,7 +28,6 @@ collision_layer = 2
 size = Vector3(20, 0.3, 20)
 material = SubResource("StandardMaterial3D_floor")
 
-# === CEILING ===
 [node name="Ceiling" type="CSGBox3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.15, 0)
 use_collision = true
@@ -37,7 +35,6 @@ collision_layer = 2
 size = Vector3(20, 0.3, 20)
 material = SubResource("StandardMaterial3D_wall")
 
-# === WALLS ===
 [node name="BackWall" type="CSGBox3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, -10.15)
 use_collision = true
@@ -66,7 +63,6 @@ collision_layer = 2
 size = Vector3(0.3, 6, 20)
 material = SubResource("StandardMaterial3D_wall")
 
-# === ARENA LIGHTING ===
 [node name="ArenaLight1" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 5, -5)
 light_color = Color(1, 0.8, 0.8, 1)
@@ -91,18 +87,17 @@ light_color = Color(1, 0.8, 0.8, 1)
 light_energy = 2.0
 omni_range = 15
 
-# === SPAWN POINTS (4 corners for 4 players) ===
 [node name="PlayerSpawn" type="Marker3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.5, -7)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 1.0, -7)
 
 [node name="PlayerSpawn2" type="Marker3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.5, -7)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 1.0, -7)
 
 [node name="PlayerSpawn3" type="Marker3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.5, 7)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 1.0, 7)
 
 [node name="PlayerSpawn4" type="Marker3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.5, 7)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 1.0, 7)
 
 [node name="PuzzleSpawn" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)

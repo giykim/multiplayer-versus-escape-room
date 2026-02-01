@@ -16,6 +16,8 @@ albedo_color = Color(0.2, 0.6, 1.0, 1.0)
 
 [node name="Player3D" type="CharacterBody3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+collision_layer = 1
+collision_mask = 3
 script = ExtResource("1_player3d")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
@@ -33,7 +35,7 @@ fov = 75.0
 
 [node name="InteractionRay" type="RayCast3D" parent="Head/Camera3D"]
 target_position = Vector3(0, 0, -3)
-collision_mask = 1
+collision_mask = 5
 
 [node name="PlayerInput3D" type="Node" parent="."]
 script = ExtResource("2_playerinput3d")
