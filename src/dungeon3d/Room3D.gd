@@ -49,6 +49,9 @@ var current_puzzle: Node3D = null
 var players_in_room: Array[int] = []
 var puzzle_type: String = ""
 
+# Reference to parent dungeon (set during initialization)
+var dungeon: Node3D = null
+
 # Door states
 var doors_locked: Dictionary = {
 	"left": false,
@@ -265,26 +268,30 @@ func can_use_door(direction: String) -> bool:
 
 func _on_left_door_entered(body: Node3D) -> void:
 	if doors_locked["left"]:
+		print("[Room3D %d] Left door is locked" % room_index)
 		return
 
 	# Check if it's a player
 	if body.has_method("get_player_id"):
 		var player_id = body.get_player_id()
+		print("[Room3D %d] Player %d entered left door, transitioning to room %d" % [room_index, player_id, room_index - 1])
 		# Notify dungeon manager of room transition
-		if get_parent() and get_parent().has_method("transition_to_room"):
-			get_parent().transition_to_room(room_index - 1, player_id)
+		if dungeon and dungeon.has_method("transition_to_room"):
+			dungeon.transition_to_room(room_index - 1, player_id)
 
 
 func _on_right_door_entered(body: Node3D) -> void:
 	if doors_locked["right"]:
+		print("[Room3D %d] Right door is locked" % room_index)
 		return
 
 	# Check if it's a player
 	if body.has_method("get_player_id"):
 		var player_id = body.get_player_id()
+		print("[Room3D %d] Player %d entered right door, transitioning to room %d" % [room_index, player_id, room_index + 1])
 		# Notify dungeon manager of room transition
-		if get_parent() and get_parent().has_method("transition_to_room"):
-			get_parent().transition_to_room(room_index + 1, player_id)
+		if dungeon and dungeon.has_method("transition_to_room"):
+			dungeon.transition_to_room(room_index + 1, player_id)
 
 
 func _on_puzzle_solved(puzzle_id: String, time_taken: float) -> void:

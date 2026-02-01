@@ -237,6 +237,7 @@ func _load_room(room_index: int) -> Room3D:
 	# Initialize room with data
 	room.initialize_from_data(room_data)
 	room.name = "Room3D_%d" % room_index
+	room.dungeon = self  # Set reference to dungeon for door transitions
 
 	# Position room in world space (linear arrangement along X axis)
 	room.position = Vector3(room_index * ROOM_SPACING, 0, 0)
