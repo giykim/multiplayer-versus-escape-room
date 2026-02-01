@@ -128,7 +128,8 @@ func get_room(index: int) -> Room3D:
 
 
 ## Transition a player to a different room
-func transition_to_room(room_index: int, player_id: int = 1) -> bool:
+## entry_direction: "left" or "right" - which door the player enters through
+func transition_to_room(room_index: int, player_id: int = 1, entry_direction: String = "") -> bool:
 	# Prevent double-transitions
 	if transition_cooldown:
 		print("[Dungeon3D] Transition on cooldown, ignoring")
@@ -178,8 +179,8 @@ func transition_to_room(room_index: int, player_id: int = 1) -> bool:
 	# Update room visibility
 	_update_room_visibility()
 
-	# Teleport player to new room spawn point
-	_teleport_player_to_room(room_index, player_id)
+	# Teleport player to new room spawn point (at the door they entered through)
+	_teleport_player_to_room(room_index, player_id, entry_direction)
 
 	# Notify new room of player entry
 	new_room.on_player_enter(player_id)
@@ -210,20 +211,22 @@ func transition_to_room(room_index: int, player_id: int = 1) -> bool:
 
 
 ## Teleport a player to a room's spawn point
-func _teleport_player_to_room(room_index: int, player_id: int) -> void:
+## entry_direction: "left" or "right" - which door the player enters through
+func _teleport_player_to_room(room_index: int, player_id: int, entry_direction: String = "") -> void:
 	var room = loaded_rooms.get(room_index)
 	if not room:
 		return
 
-	var spawn_pos = room.get_player_spawn_position()
+	var spawn_pos = room.get_player_spawn_position(entry_direction)
+	var spawn_rotation = room.get_player_spawn_rotation(entry_direction) if room.has_method("get_player_spawn_rotation") else 0.0
 
 	# Find the player node and teleport them
-	# This assumes players are direct children of a PlayerContainer or similar
 	var players = get_tree().get_nodes_in_group("players")
 	for player in players:
 		if player.has_method("get_player_id") and player.get_player_id() == player_id:
 			player.global_position = spawn_pos
-			print("[Dungeon3D] Teleported player %d to %s" % [player_id, spawn_pos])
+			player.rotation.y = spawn_rotation
+			print("[Dungeon3D] Teleported player %d to %s (entry: %s)" % [player_id, spawn_pos, entry_direction])
 			break
 
 

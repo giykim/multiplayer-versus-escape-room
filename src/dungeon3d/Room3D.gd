@@ -61,6 +61,11 @@ var doors_locked: Dictionary = {
 	"right": true  # Forward door locked by default
 }
 
+# Spawn positions at each door (set relative to room center)
+const LEFT_DOOR_SPAWN: Vector3 = Vector3(-4.0, 1.0, 0)   # Just inside left door
+const RIGHT_DOOR_SPAWN: Vector3 = Vector3(4.0, 1.0, 0)   # Just inside right door
+const CENTER_SPAWN: Vector3 = Vector3(0, 1.0, 3)          # Center of room (fallback)
+
 # Room type colors for materials
 const ROOM_COLORS: Dictionary = {
 	RoomType.PUZZLE: Color(0.2, 0.3, 0.4),     # Blue-gray
@@ -354,11 +359,36 @@ func on_player_exit(player_id: int) -> void:
 	print("[Room3D %d] Player %d exited" % [room_index, player_id])
 
 
-## Get player spawn position
-func get_player_spawn_position() -> Vector3:
-	if player_spawn:
-		return player_spawn.global_position
-	return global_position
+## Get player spawn position based on entry direction
+## entry_direction: "left" = entered from left door, "right" = entered from right door, "" = default
+func get_player_spawn_position(entry_direction: String = "") -> Vector3:
+	var local_spawn: Vector3
+
+	match entry_direction:
+		"left":
+			# Entered from left door - spawn just inside the left door, facing right
+			local_spawn = LEFT_DOOR_SPAWN
+		"right":
+			# Entered from right door - spawn just inside the right door, facing left
+			local_spawn = RIGHT_DOOR_SPAWN
+		_:
+			# Default spawn at center or marker
+			if player_spawn:
+				return player_spawn.global_position
+			local_spawn = CENTER_SPAWN
+
+	return global_position + local_spawn
+
+
+## Get the rotation for player based on entry direction
+func get_player_spawn_rotation(entry_direction: String = "") -> float:
+	match entry_direction:
+		"left":
+			return deg_to_rad(90)   # Face right (into room)
+		"right":
+			return deg_to_rad(-90)  # Face left (into room)
+		_:
+			return 0  # Face forward
 
 
 ## Check if a door can be used
@@ -379,9 +409,9 @@ func _on_left_door_entered(body: Node3D) -> void:
 	if body.has_method("get_player_id"):
 		var player_id = body.get_player_id()
 		print("[Room3D %d] Player %d entered left door, transitioning to room %d" % [room_index, player_id, room_index - 1])
-		# Notify dungeon manager of room transition
+		# Notify dungeon manager of room transition (entering from right side of previous room)
 		if dungeon and dungeon.has_method("transition_to_room"):
-			dungeon.transition_to_room(room_index - 1, player_id)
+			dungeon.transition_to_room(room_index - 1, player_id, "right")
 
 
 func _on_right_door_entered(body: Node3D) -> void:
@@ -393,9 +423,9 @@ func _on_right_door_entered(body: Node3D) -> void:
 	if body.has_method("get_player_id"):
 		var player_id = body.get_player_id()
 		print("[Room3D %d] Player %d entered right door, transitioning to room %d" % [room_index, player_id, room_index + 1])
-		# Notify dungeon manager of room transition
+		# Notify dungeon manager of room transition (entering from left side of next room)
 		if dungeon and dungeon.has_method("transition_to_room"):
-			dungeon.transition_to_room(room_index + 1, player_id)
+			dungeon.transition_to_room(room_index + 1, player_id, "left")
 
 
 func _on_puzzle_solved(puzzle_id: String, time_taken: float) -> void:
