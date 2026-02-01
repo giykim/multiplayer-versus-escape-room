@@ -115,6 +115,10 @@ func _setup_interaction_ray() -> void:
 	if interaction_ray:
 		interaction_ray.target_position = Vector3(0, 0, -interaction_range)
 		interaction_ray.enabled = true
+		interaction_ray.collide_with_areas = true  # Detect Area3D nodes
+		interaction_ray.collide_with_bodies = true  # Also detect physics bodies
+		interaction_ray.collision_mask = 32  # Layer 6 = Interactables
+		print("[Player3D] Interaction ray configured for layer 6 (Interactables)")
 
 
 func _apply_player_color() -> void:
@@ -216,6 +220,7 @@ func _process_interaction_ray() -> void:
 
 		if _current_interactable:
 			interaction_started.emit(_current_interactable)
+			print("[Player3D] Looking at interactable: %s (press E)" % _current_interactable.name)
 
 
 func _on_movement_input_changed(direction: Vector3) -> void:
@@ -260,11 +265,19 @@ func _try_interact() -> void:
 	if _current_interactable:
 		interaction_triggered.emit(_current_interactable)
 
-		# Call interact method if it exists on the interactable
-		if _current_interactable.has_method("interact"):
-			_current_interactable.interact(self)
-		elif _current_interactable.has_method("on_interact"):
-			_current_interactable.on_interact(self)
+		# Check if this is a child area that delegates to a parent puzzle
+		var target = _current_interactable
+		if _current_interactable.has_meta("puzzle_parent"):
+			target = _current_interactable.get_meta("puzzle_parent")
+			print("[Player3D] Delegating interaction to puzzle parent")
+
+		# Call interact method if it exists on the target
+		if target.has_method("interact"):
+			target.interact(self)
+			print("[Player3D] Called interact() on %s" % target.name)
+		elif target.has_method("on_interact"):
+			target.on_interact(self)
+			print("[Player3D] Called on_interact() on %s" % target.name)
 
 
 func _is_interactable(node: Node) -> bool:

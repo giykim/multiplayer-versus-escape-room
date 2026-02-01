@@ -138,8 +138,12 @@ func _create_status_label() -> void:
 func _create_interaction_area() -> void:
 	interaction_area = Area3D.new()
 	interaction_area.name = "InteractionArea"
-	interaction_area.collision_layer = 8  # Interactables layer
+	interaction_area.collision_layer = 32  # Layer 6 = Interactables
 	interaction_area.collision_mask = 0
+
+	# Store reference to parent puzzle for interaction delegation
+	interaction_area.set_meta("puzzle_parent", self)
+	interaction_area.add_to_group("interactable")
 
 	var shape = CollisionShape3D.new()
 	var box_shape = BoxShape3D.new()
@@ -149,6 +153,7 @@ func _create_interaction_area() -> void:
 
 	interaction_area.add_child(shape)
 	add_child(interaction_area)
+	print("[InteractivePuzzlePanel] Interaction area created on layer 6")
 
 
 func initialize(seed_value: int, puzzle_difficulty: int) -> void:
