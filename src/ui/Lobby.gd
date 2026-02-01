@@ -29,31 +29,41 @@ var player_list_item_scene: PackedScene = null
 
 
 func _ready() -> void:
-	# Connect UI signals
-	connect_button.pressed.connect(_on_connect_pressed)
-	start_button.pressed.connect(_on_start_pressed)
-	back_button.pressed.connect(_on_back_pressed)
-	ready_button.pressed.connect(_on_ready_pressed)
+	# Connect UI signals (with null checks)
+	if connect_button:
+		connect_button.pressed.connect(_on_connect_pressed)
+	if start_button:
+		start_button.pressed.connect(_on_start_pressed)
+	if back_button:
+		back_button.pressed.connect(_on_back_pressed)
+	if ready_button:
+		ready_button.pressed.connect(_on_ready_pressed)
 
 	# Connect network signals
-	NetworkManager.connection_succeeded.connect(_on_connection_succeeded)
-	NetworkManager.connection_failed.connect(_on_connection_failed)
-	NetworkManager.server_disconnected.connect(_on_server_disconnected)
-	NetworkManager.lobby_updated.connect(_on_lobby_updated)
-	NetworkManager.player_connected.connect(_on_player_connected)
-	NetworkManager.player_disconnected.connect(_on_player_disconnected)
+	if NetworkManager:
+		NetworkManager.connection_succeeded.connect(_on_connection_succeeded)
+		NetworkManager.connection_failed.connect(_on_connection_failed)
+		NetworkManager.server_disconnected.connect(_on_server_disconnected)
+		NetworkManager.lobby_updated.connect(_on_lobby_updated)
+		NetworkManager.player_connected.connect(_on_player_connected)
+		NetworkManager.player_disconnected.connect(_on_player_disconnected)
 
 	# Set default values
-	port_input.text = str(NetworkManager.DEFAULT_PORT)
-	ip_input.text = "127.0.0.1"
-	player_name_input.text = "Player"
+	if port_input and NetworkManager:
+		port_input.text = str(NetworkManager.DEFAULT_PORT)
+	if ip_input:
+		ip_input.text = "127.0.0.1"
+	if player_name_input:
+		player_name_input.text = "Player"
 
 	# Configure UI based on hosting mode
 	_setup_for_mode()
 
 	# Update game state
-	GameManager.change_state(GameManager.GameState.LOBBY)
-	AudioManager.play_music(AudioManager.MusicTrack.LOBBY)
+	if GameManager:
+		GameManager.change_state(GameManager.GameState.LOBBY)
+	if AudioManager:
+		AudioManager.play_music(AudioManager.MusicTrack.LOBBY)
 
 	print("[Lobby] Ready (hosting: %s)" % is_hosting)
 
@@ -221,10 +231,17 @@ func _return_to_menu() -> void:
 
 func _update_player_list() -> void:
 	# Clear existing items
+	if not player_list_container:
+		push_warning("[Lobby] player_list_container is null")
+		return
+
 	for child in player_list_container.get_children():
 		child.queue_free()
 
 	# Add player items
+	if not NetworkManager:
+		return
+
 	for peer_id in NetworkManager.connected_players:
 		var player_name = NetworkManager.connected_players[peer_id]
 		var is_ready = player_ready_states.get(peer_id, false)

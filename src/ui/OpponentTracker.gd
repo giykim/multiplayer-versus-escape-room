@@ -7,7 +7,7 @@ signal opponent_finished_puzzle(player_id: int)
 signal opponent_entered_room(player_id: int, room_index: int)
 
 # UI container for opponent entries
-@onready var entries_container: VBoxContainer = $EntriesContainer
+@onready var entries_container: VBoxContainer = $VBox/EntriesContainer
 
 # Track opponent data
 var opponent_entries: Dictionary = {}  # player_id -> OpponentEntry node
@@ -35,11 +35,14 @@ func initialize(player_id: int) -> void:
 
 func _refresh_opponent_list() -> void:
 	# Clear existing entries
-	for child in entries_container.get_children():
-		child.queue_free()
+	if entries_container:
+		for child in entries_container.get_children():
+			child.queue_free()
 	opponent_entries.clear()
 
 	# Create entry for each opponent
+	if not GameManager:
+		return
 	for player_id in GameManager.players:
 		if player_id == local_player_id:
 			continue
@@ -47,6 +50,8 @@ func _refresh_opponent_list() -> void:
 
 
 func _create_opponent_entry(player_id: int) -> void:
+	if not entries_container:
+		return
 	var entry = _build_entry_ui(player_id)
 	entries_container.add_child(entry)
 	opponent_entries[player_id] = entry
