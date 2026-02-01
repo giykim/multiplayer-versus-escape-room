@@ -7,6 +7,7 @@ extends CanvasLayer
 @onready var puzzle_progress: Label = %PuzzleProgress
 @onready var advantages_container: VBoxContainer = %AdvantagesContainer
 @onready var minimap_container: Control = %MinimapContainer
+@onready var interaction_prompt: Label = %InteractionPrompt
 
 # Timer state
 var match_time: float = 0.0
@@ -17,6 +18,9 @@ var local_player_id: int = 0
 
 
 func _ready() -> void:
+	# Add to hud group for easy finding
+	add_to_group("hud")
+
 	# Connect to GameManager signals
 	if GameManager:
 		GameManager.game_state_changed.connect(_on_game_state_changed)
@@ -26,6 +30,10 @@ func _ready() -> void:
 	_update_coins(0)
 	_update_timer(0.0)
 	_update_puzzle_progress(0, 0)
+
+	# Hide interaction prompt initially
+	if interaction_prompt:
+		interaction_prompt.visible = false
 
 	print("[HUD] Ready")
 
@@ -149,3 +157,15 @@ func show_message(text: String, duration: float = 2.0) -> void:
 func set_minimap_visible(visible_state: bool) -> void:
 	if minimap_container:
 		minimap_container.visible = visible_state
+
+
+func show_interaction_prompt(text: String) -> void:
+	if interaction_prompt:
+		interaction_prompt.text = text
+		interaction_prompt.visible = true
+
+
+func hide_interaction_prompt() -> void:
+	if interaction_prompt:
+		interaction_prompt.visible = false
+		interaction_prompt.text = ""

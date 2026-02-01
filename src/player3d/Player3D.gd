@@ -215,12 +215,25 @@ func _process_interaction_ray() -> void:
 	if new_interactable != _current_interactable:
 		if _current_interactable:
 			interaction_ended.emit(_current_interactable)
+			_hide_interaction_prompt()
 
 		_current_interactable = new_interactable
 
 		if _current_interactable:
 			interaction_started.emit(_current_interactable)
-			print("[Player3D] Looking at interactable: %s (press E)" % _current_interactable.name)
+			_show_interaction_prompt()
+
+
+func _show_interaction_prompt() -> void:
+	var hud = get_tree().get_first_node_in_group("hud")
+	if hud and hud.has_method("show_interaction_prompt"):
+		hud.show_interaction_prompt("[E] Interact")
+
+
+func _hide_interaction_prompt() -> void:
+	var hud = get_tree().get_first_node_in_group("hud")
+	if hud and hud.has_method("hide_interaction_prompt"):
+		hud.hide_interaction_prompt()
 
 
 func _on_movement_input_changed(direction: Vector3) -> void:
